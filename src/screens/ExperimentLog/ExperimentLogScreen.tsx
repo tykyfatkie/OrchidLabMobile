@@ -6,6 +6,7 @@ import { View, Text, FlatList, ActivityIndicator, RefreshControl, ImageBackgroun
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BookOpen, Activity } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '@env';
 
 import { styles } from '../../styles/styles';
@@ -17,9 +18,10 @@ const BASE_URL = API_URL;
 const PAGE_SIZE = 10;
 
 const ExperimentLogScreen = () => {
+  const navigation = useNavigation<any>();
   const [data, setData] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -35,6 +37,7 @@ const ExperimentLogScreen = () => {
       setData(prev => replace ? fetchedData : [...prev, ...fetchedData]);
       setTotalCount(json.totalCount ?? 0);
       setHasMore(pageNo < (json.pageCount ?? 1));
+      setPage(pageNo);
     } catch (e) {
       console.error("Lỗi fetch log:", e);
     } finally {
@@ -89,7 +92,13 @@ const ExperimentLogScreen = () => {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.scrollContent}
           ListHeaderComponent={ListHeader}
-          renderItem={({ item, index }) => <ExperimentLogItem item={item} index={index} />}
+          renderItem={({ item, index }) => (
+            <ExperimentLogItem
+              item={item}
+              index={index}
+              onPress={() => navigation.navigate('ExperimentLogDetail', { experimentLogId: item.id })}
+            />
+          )}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchLogs(1, true)} tintColor="#1F3D2F" />}
           onEndReached={() => hasMore && fetchLogs(page + 1, false)}

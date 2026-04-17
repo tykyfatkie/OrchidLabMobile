@@ -16,15 +16,16 @@ interface Props {
     currentStageOrder: number;
   };
   index: number;
+  onPress?: () => void;
 }
 
-export const ExperimentLogItem = ({ item, index }: Props) => {
+export const ExperimentLogItem = ({ item, index, onPress }: Props) => {
   const isCreated = item.status === 'Created';
   const formattedDate = item.createdDate?.split('T')[0] ?? '';
 
   return (
     <Animated.View entering={FadeInUp.delay(Math.min(index * 100, 500)).springify()}>
-      <TouchableOpacity style={styles.reportCard} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.reportCard} activeOpacity={0.85} onPress={onPress}>
         <View style={styles.reportInfo}>
           <Text style={styles.reportTitle} numberOfLines={1}>{item.name}</Text>
           <Text style={styles.reportDate}>
