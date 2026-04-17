@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { CheckCircle2, Clock } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { styles } from '../styles/styles';
+import { translateStatusVi } from '../utils/statusTranslations';
 
 type Report = {
   id: string;
@@ -22,7 +23,7 @@ interface Props {
 
 export const ReportItem = ({ item, index }: Props) => {
   const isDone = item.status === 'Approved' || item.status === 'Done';
-  const displayStatus = isDone ? 'Đã duyệt' : (item.status === 'WaitingForApproval' ? 'Chờ duyệt' : item.status);
+  const displayStatus = translateStatusVi(item.status);
   const formattedDate = item.createdDate?.split('T')[0] ?? '';
 
   return (

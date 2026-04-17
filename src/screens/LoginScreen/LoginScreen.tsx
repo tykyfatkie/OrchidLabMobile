@@ -33,6 +33,10 @@ import { styles } from './styles';
 const { height: SCREEN_H } = Dimensions.get('window');
 const SWIPE_LIMIT = 220; 
 
+// const getBaseUrl = () => {
+//   return String(API_URL).trim().replace(/\/+$/, '');
+// };
+
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { login } = useAuth();
@@ -102,21 +106,29 @@ const LoginScreen: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      const data = await response.json();
+      const rawBody = await response.text();
+      const data = rawBody ? JSON.parse(rawBody) : {};
       if (response.ok) {
-        const decoded = decodeJWT(data.accessToken || data.token);
+        const token = String(data.accessToken || data.token || '');
+        const decoded = decodeJWT(token);
         await login({
           id: String(decoded?.sub || data.id),
           name: data.name || decoded?.name || '',
           email: data.email || decoded?.email || email,
           roleName: data.roleName || decoded?.role || 'Nhân viên',
-        });
+        }, token || null);
         navigation.replace('TechnicianReports');
       } else {
         Alert.alert('Lỗi', data?.detail || 'Thông tin không chính xác');
       }
-    } catch {
-      Alert.alert('Lỗi', 'Kết nối thất bại');
+    } catch (error: any) {
+      console.log('LOGIN FETCH ERROR:', error);
+      const message = String(error?.message || error);
+      if (message.includes('Network request failed')) {
+        Alert.alert('Lỗi mạng', 'Không thể kết nối API. Kiểm tra API_URL trong .env và khởi động lại Metro bằng --reset-cache.');
+      } else {
+        Alert.alert('Lỗi', message);
+      }
     } finally {
       setLoading(false);
     }

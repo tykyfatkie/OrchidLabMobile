@@ -4,6 +4,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Calendar, Layers, Info } from 'lucide-react-native';
 import { styles } from '../styles/styles';
+import { translateTaskStatusVi } from '../utils/statusTranslations';
 
 interface Props {
   item: {
@@ -14,14 +15,15 @@ interface Props {
     status: string;
     expectedEndDate: string | null;
   };
+  onPress?: () => void;
 }
 
-export const TaskItem = ({ item }: Props) => {
+export const TaskItem = ({ item, onPress }: Props) => {
   const isTemplate = item.status === 'Template';
   const displayDate = item.expectedEndDate ? item.expectedEndDate.split('T')[0] : 'N/A';
 
   return (
-    <TouchableOpacity style={styles.reportCard} activeOpacity={0.85}>
+    <TouchableOpacity style={styles.reportCard} activeOpacity={0.85} onPress={onPress}>
       <View style={styles.reportInfo}>
         <Text style={styles.reportTitle} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.reportDate} numberOfLines={2}>{item.description}</Text>
@@ -37,7 +39,7 @@ export const TaskItem = ({ item }: Props) => {
 
       <View style={[styles.statusTag, isTemplate ? styles.statusPending : styles.statusDone]}>
         <Text style={styles.statusText}>
-          {isTemplate ? 'Bản mẫu' : item.status}
+          {translateTaskStatusVi(item.status)}
         </Text>
       </View>
     </TouchableOpacity>

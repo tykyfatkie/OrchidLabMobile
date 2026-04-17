@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Calendar } from 'lucide-react-native';
 import { styles } from '../styles/styles';
+import { translateStatusVi } from '../utils/statusTranslations';
 
 interface Props {
   item: {
@@ -33,7 +34,7 @@ export const SampleItem = ({ item }: Props) => {
       </View>
 
       <View style={[styles.statusTag, isCreated ? styles.statusPending : styles.statusDone]}>
-        <Text style={styles.statusText}>{item.status}</Text>
+        <Text style={styles.statusText}>{translateStatusVi(item.status)}</Text>
       </View>
     </TouchableOpacity>
   );

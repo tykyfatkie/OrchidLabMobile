@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { s } from '../../styles/technicianReportsStyles';
+import { translateStatusVi } from '../../utils/statusTranslations';
 
 export type Report = {
   id: string;
@@ -29,7 +30,7 @@ export const ReportCard = ({ item, onPress }: { item: Report; onPress: () => voi
       <View style={s.cardTop}>
         <Text style={s.cardName} numberOfLines={1}>{item.name}</Text>
         <View style={[s.badge, { backgroundColor: color + '22' }]}>
-          <Text style={[s.badgeText, { color }]}>{item.status}</Text>
+          <Text style={[s.badgeText, { color }]}>{translateStatusVi(item.status)}</Text>
         </View>
       </View>
       <Text style={s.cardSample}>🌿 {item.sampleName}</Text>

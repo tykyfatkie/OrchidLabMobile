@@ -6,18 +6,32 @@ import { View, Text, FlatList, ActivityIndicator, RefreshControl, ImageBackgroun
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ClipboardList, ListChecks } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '@env';
 
 import { styles } from '../../styles/styles';
 import { CustomTabBar } from '../../components/CustomTabBar';
 import { TaskItem } from '../../components/TaskItem';
 import { QuickMenu } from '../../components/QuickMenu';
+import { useAuth } from '../../context/AuthContext';
 
 const BASE_URL = API_URL;
 const PAGE_SIZE = 10;
 
+interface TaskListItem {
+  id: string;
+  name: string;
+  description: string;
+  stageId: number;
+  status: string;
+  expectedEndDate: string | null;
+  technicianId?: string | null;
+}
+
 const TasksScreen = () => {
-  const [data, setData] = useState<any[]>([]);
+  const navigation = useNavigation<any>();
+  const { user, accessToken } = useAuth();
+  const [data, setData] = useState<TaskListItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -30,19 +44,23 @@ const TasksScreen = () => {
     try {
       const cleanUrl = String(BASE_URL).replace(/\/+$/, '');
       const url = `${cleanUrl}/api/tasks?pageNumber=${pageNo}&pageSize=${PAGE_SIZE}`;
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      });
       const json = await res.json();
 
-      const fetchedData = json.data ?? [];
-      setData(prev => replace ? fetchedData : [...prev, ...fetchedData]);
-      setTotalCount(json.totalCount ?? 0);
+      const fetchedData = (json.data ?? []) as TaskListItem[];
+      const filteredData = fetchedData.filter((item) => item.technicianId === user?.id);
+
+      setData(prev => replace ? filteredData : [...prev, ...filteredData]);
+      setTotalCount(prev => replace ? filteredData.length : prev + filteredData.length);
       setHasMore(pageNo < (json.pageCount ?? 1));
     } catch (e) {
       console.error("Lỗi fetch tasks:", e);
     } finally {
       setLoading(false); setLoadingMore(false); setRefreshing(false);
     }
-  }, []);
+  }, [user?.id, accessToken]);
 
   useEffect(() => { fetchTasks(1, true); }, []);
 
@@ -107,7 +125,12 @@ const TasksScreen = () => {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.scrollContent}
           ListHeaderComponent={ListHeader}
-          renderItem={({ item }) => <TaskItem item={item} />}
+          renderItem={({ item }) => (
+            <TaskItem
+              item={item}
+              onPress={() => navigation.navigate('TaskDetail', { taskId: item.id })}
+            />
+          )}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1F3D2F" />

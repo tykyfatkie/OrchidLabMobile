@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Layers, MapPin } from 'lucide-react-native';
 import { styles } from '../styles/styles';
+import { translateStatusVi } from '../utils/statusTranslations';
 
 interface Props {
   item: {
@@ -40,7 +41,7 @@ export const BatchItem = ({ item }: Props) => {
 
       <View style={[styles.statusTag, isReady ? styles.statusDone : styles.statusPending]}>
         <Text style={styles.statusText}>
-          {isReady ? 'Sẵn sàng' : item.status}
+          {translateStatusVi(item.status)}
         </Text>
       </View>
     </TouchableOpacity>
