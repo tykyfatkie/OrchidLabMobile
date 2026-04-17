@@ -6,6 +6,7 @@ import { View, Text, FlatList, ActivityIndicator, RefreshControl, ImageBackgroun
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Sprout, Box } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '@env';
 
 import { styles } from '../../styles/styles';
@@ -17,6 +18,7 @@ const BASE_URL = API_URL;
 const PAGE_SIZE = 10;
 
 const BatchesScreen = () => {
+  const navigation = useNavigation<any>();
   const [data, setData] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page] = useState(1);
@@ -91,7 +93,12 @@ const BatchesScreen = () => {
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.scrollContent}
           ListHeaderComponent={ListHeader}
-          renderItem={({ item }) => <BatchItem item={item} />}
+          renderItem={({ item }) => (
+            <BatchItem
+              item={item}
+              onPress={() => navigation.navigate('BatchDetail', { batchId: item.id })}
+            />
+          )}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={() => fetchBatches(1, true)} tintColor="#1F3D2F" />

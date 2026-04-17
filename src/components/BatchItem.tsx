@@ -16,13 +16,14 @@ interface Props {
     heightUnit: string;
     status: string;
   };
+  onPress?: () => void;
 }
 
-export const BatchItem = ({ item }: Props) => {
+export const BatchItem = ({ item, onPress }: Props) => {
   const isReady = item.status === 'Ready';
 
   return (
-    <TouchableOpacity style={styles.reportCard} activeOpacity={0.85}>
+    <TouchableOpacity style={styles.reportCard} activeOpacity={0.85} onPress={onPress}>
       <View style={styles.reportInfo}>
         <Text style={styles.reportTitle} numberOfLines={1}>{item.batchName}</Text>
         
