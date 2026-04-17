@@ -3,9 +3,9 @@ import { StyleSheet, Dimensions } from 'react-native';
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 export const styles = StyleSheet.create({
-  root: { 
-    flex: 1, 
-    backgroundColor: '#000' 
+  root: {
+    flex: 1,
+    backgroundColor: '#DFE7DF',
   },
   bgContainer: {
     ...StyleSheet.absoluteFill,
@@ -19,74 +19,99 @@ export const styles = StyleSheet.create({
     width: SCREEN_W,
     height: SCREEN_H,
   },
-  overlay: { 
-    ...StyleSheet.absoluteFill, 
-    backgroundColor: 'rgba(0, 0, 0, 0.35)' 
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
   },
-  contentContainer: { 
-    flex: 1 
+  contentContainer: {
+    flex: 1,
   },
-
   headlineWrap: {
     position: 'absolute',
     top: SCREEN_H * 0.38,
     alignItems: 'center',
     width: '100%',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
   },
   headlineHello: {
-    fontSize: 40,
-    fontWeight: '800',
+    fontSize: 38,
+    lineHeight: 44,
+    fontWeight: '900',
     color: '#FFFFFF',
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowColor: 'rgba(0, 0, 0, 0.34)',
     textShadowOffset: { width: 0, height: 4 },
     textShadowRadius: 10,
   },
   headlineSub: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginTop: 12,
-    letterSpacing: 2,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.82)',
+    marginTop: 10,
+    letterSpacing: 1.8,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
-
+  heroCard: {
+    alignItems: 'center',
+  },
+  heroBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DCE8DD',
+    shadowColor: '#1F3D2F',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 2,
+    marginBottom: 14,
+  },
   glassCard: {
     position: 'absolute',
     alignSelf: 'center',
     width: SCREEN_W * 0.88,
-    backgroundColor: 'transparent', // Quan trọng: Phải trong suốt để thấy hiệu ứng Blur
-    borderRadius: 32,
-    padding: 28,
-    borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-    overflow: 'hidden', // Khóa BlurView bên trong
-    // Shadow cho iOS
-    shadowColor: '#000',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: '#E4ECE4',
+    shadowColor: '#1F3D2F',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.12,
     shadowRadius: 24,
+    elevation: 5,
   },
   cardTitle: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 24,
+    fontWeight: '900',
+    color: '#1F3D2F',
+    marginBottom: 8,
     textAlign: 'center',
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#4F6658',
+    textAlign: 'center',
+    marginBottom: 18,
+    fontWeight: '600',
   },
 
   ctaGradient: {
-    paddingVertical: 16,
-    borderRadius: 16,
+    minHeight: 50,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    marginTop: 6,
   },
-  ctaText: { 
-    color: '#FFFFFF', 
-    fontSize: 16, 
-    fontWeight: '700' 
+  ctaText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.4,
   },
   swipeHint: {
     position: 'absolute',
@@ -95,11 +120,27 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   swipeText: {
-    color: '#FFF',
+    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '800',
-    opacity: 0.5,
+    opacity: 0.72,
     letterSpacing: 3,
     marginTop: 8,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: '#4F6658',
+    fontWeight: '700',
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  eyeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F7F3',
   },
 });

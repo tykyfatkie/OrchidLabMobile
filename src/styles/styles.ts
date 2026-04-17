@@ -3,7 +3,7 @@ import { StyleSheet, Platform } from 'react-native';
 export const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#DFE7DF' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 },
-  scrollContent: { paddingHorizontal: 24, paddingBottom: 110 },
+  scrollContent: { paddingHorizontal: 24, paddingBottom: 130 },
   listHeaderPadding: { paddingTop: 10, paddingBottom: 16 },
   headerContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 24, paddingTop: 20, paddingBottom: 16, zIndex: 10 },
   headerTitle: { fontSize: 28, fontWeight: '900', color: '#1F3D2F', lineHeight: 34 },
@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
   floatingCreateButton: {
     position: 'absolute',
     right: 22,
-    bottom: Platform.OS === 'ios' ? 102 : 84,
+    bottom: Platform.OS === 'ios' ? 122 : 104,
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -46,7 +46,7 @@ export const styles = StyleSheet.create({
   statusDone: { backgroundColor: '#A3F7BF' },
   statusPending: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#1F3D2F', borderStyle: 'dashed' },
   statusText: { fontSize: 12, fontWeight: '700', color: '#1F3D2F' },
-  tabBarContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, height: Platform.OS === 'ios' ? 90 : 70, backgroundColor: '#1F3D2F', borderTopLeftRadius: 30, borderTopRightRadius: 30, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingHorizontal: 10, paddingBottom: Platform.OS === 'ios' ? 20 : 0, shadowColor: '#000', shadowOpacity: 0.15, shadowOffset: { width: 0, height: -5 }, shadowRadius: 15, elevation: 10 },
+  tabBarContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? 22 : 18, left: 12, right: 12, height: Platform.OS === 'ios' ? 90 : 70, backgroundColor: '#1F3D2F', borderTopLeftRadius: 30, borderTopRightRadius: 30, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingHorizontal: 10, paddingBottom: Platform.OS === 'ios' ? 24 : 6, shadowColor: '#000', shadowOpacity: 0.18, shadowOffset: { width: 0, height: -5 }, shadowRadius: 15, elevation: 12 },
   tabItem: { alignItems: 'center', justifyContent: 'center', width: 70 },
   iconWrapper: { padding: 8, borderRadius: 20 },
   iconWrapperActive: { backgroundColor: 'rgba(163, 247, 191, 0.15)' },

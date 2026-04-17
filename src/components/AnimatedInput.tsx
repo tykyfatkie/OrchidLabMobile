@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
-import { TextInput, StyleSheet } from 'react-native';
+import { TextInput, StyleSheet, View, TextInputProps } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,6 +10,7 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { C } from '../constants/colors';
+import type { ReactNode } from 'react';
 
 export interface AnimatedInputProps {
   placeholder: string;
@@ -18,6 +19,11 @@ export interface AnimatedInputProps {
   secureTextEntry?: boolean;
   keyboardType?: 'default' | 'email-address';
   delay?: number;
+  leftIcon?: ReactNode;
+  rightAccessory?: ReactNode;
+  onSubmitEditing?: TextInputProps['onSubmitEditing'];
+  returnKeyType?: TextInputProps['returnKeyType'];
+  blurOnSubmit?: boolean;
 }
 
 const AnimatedInput: React.FC<AnimatedInputProps> = ({
@@ -27,6 +33,11 @@ const AnimatedInput: React.FC<AnimatedInputProps> = ({
   secureTextEntry = false,
   keyboardType = 'default',
   delay = 0,
+  leftIcon,
+  rightAccessory,
+  onSubmitEditing,
+  returnKeyType,
+  blurOnSubmit,
 }) => {
   const [focused, setFocused] = useState(false);
   const focusAnim = useSharedValue(0);
@@ -59,18 +70,25 @@ const AnimatedInput: React.FC<AnimatedInputProps> = ({
 
   return (
     <Animated.View style={[styles.inputWrapper, wrapperStyle]}>
-      <TextInput
-        style={styles.input}
-        placeholder={placeholder}
-        placeholderTextColor={C.textLight}
-        value={value}
-        onChangeText={onChangeText}
-        secureTextEntry={secureTextEntry}
-        keyboardType={keyboardType}
-        autoCapitalize="none"
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-      />
+      <View style={styles.inputRow}>
+        {leftIcon ? <View style={styles.leftIcon}>{leftIcon}</View> : null}
+        <TextInput
+          style={styles.input}
+          placeholder={placeholder}
+          placeholderTextColor={C.textLight}
+          value={value}
+          onChangeText={onChangeText}
+          secureTextEntry={secureTextEntry}
+          keyboardType={keyboardType}
+          autoCapitalize="none"
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType={returnKeyType}
+          blurOnSubmit={blurOnSubmit}
+        />
+        {rightAccessory ? <View style={styles.rightAccessory}>{rightAccessory}</View> : null}
+      </View>
     </Animated.View>
   );
 };
@@ -87,9 +105,22 @@ const styles = StyleSheet.create({
     shadowColor: C.green3,
     shadowOffset: { width: 0, height: 4 },
   },
+  inputRow: {
+    minHeight: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  leftIcon: {
+    paddingLeft: 14,
+    paddingRight: 10,
+  },
+  rightAccessory: {
+    paddingRight: 12,
+    paddingLeft: 8,
+  },
   input: {
+    flex: 1,
     paddingVertical: 14,
-    paddingHorizontal: 18,
     fontSize: 15,
     color: C.textDark,
   },
