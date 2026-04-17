@@ -6,6 +6,7 @@ import { View, Text, FlatList, ActivityIndicator, RefreshControl, ImageBackgroun
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TestTube, PackageCheck } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '@env';
 
 import { styles } from '../../styles/styles';
@@ -17,9 +18,10 @@ const BASE_URL = API_URL;
 const PAGE_SIZE = 10;
 
 const SamplesScreen = () => {
+  const navigation = useNavigation<any>();
   const [data, setData] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -35,6 +37,7 @@ const SamplesScreen = () => {
       setData(prev => replace ? fetchedData : [...prev, ...fetchedData]);
       setTotalCount(json.totalCount ?? 0);
       setHasMore(pageNo < (json.pageCount ?? 1));
+      setPage(pageNo);
     } catch (e) {
       console.error("Lỗi fetch samples:", e);
     } finally {
@@ -89,10 +92,12 @@ const SamplesScreen = () => {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.scrollContent}
           ListHeaderComponent={ListHeader}
-          renderItem={({ item }) => <SampleItem item={item} />}
+          renderItem={({ item }) => (
+            <SampleItem item={item} onPress={() => navigation.navigate('SampleDetail', { sampleId: item.id })} />
+          )}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchSamples(1, true)} tintColor="#1F3D2F" />}
-          onEndReached={() => hasMore && fetchSamples(page + 1, false)}
+          onEndReached={() => hasMore && !loading && fetchSamples(page + 1, false)}
           onEndReachedThreshold={0.3}
           showsVerticalScrollIndicator={false}
         />

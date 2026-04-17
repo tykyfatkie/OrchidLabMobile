@@ -7,6 +7,7 @@ import CreateReportScreen from '../screens/Reports/CreateReportScreen.tsx';
 import ExperimentLogScreen from '../screens/ExperimentLog/ExperimentLogScreen';
 import ExperimentLogDetailScreen from '../screens/ExperimentLog/ExperimentLogDetailScreen';
 import SamplesScreen from '../screens/Samples/SamplesScreen';
+import SampleDetailScreen from '../screens/Samples/SampleDetailScreen';
 import BatchesScreen from '../screens/Batches/BatchesScreen';
 import BatchDetailScreen from '../screens/Batches/BatchDetailScreen';
 import TasksScreen from '../screens/Tasks/TasksScreen';
@@ -30,6 +31,7 @@ export const AuthNavigator = () => {
       <Stack.Screen name="ExperimentLog" component={ExperimentLogScreen} />
       <Stack.Screen name="ExperimentLogDetail" component={ExperimentLogDetailScreen} />
       <Stack.Screen name="Samples" component={SamplesScreen} />
+      <Stack.Screen name="SampleDetail" component={SampleDetailScreen} />
       <Stack.Screen name="Batches" component={BatchesScreen} />
       <Stack.Screen name="BatchDetail" component={BatchDetailScreen} />
       <Stack.Screen name="Tasks" component={TasksScreen} />
