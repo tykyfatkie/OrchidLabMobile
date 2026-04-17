@@ -19,16 +19,17 @@ type Report = {
 interface Props {
   item: Report;
   index: number;
+  onPress?: () => void;
 }
 
-export const ReportItem = ({ item, index }: Props) => {
+export const ReportItem = ({ item, index, onPress }: Props) => {
   const isDone = item.status === 'Approved' || item.status === 'Done';
   const displayStatus = translateStatusVi(item.status);
   const formattedDate = item.createdDate?.split('T')[0] ?? '';
 
   return (
     <Animated.View entering={FadeInUp.delay(Math.min(index * 100, 500)).springify()}>
-      <TouchableOpacity style={styles.reportCard} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.reportCard} activeOpacity={0.85} onPress={onPress}>
         {item.isNewest && <View style={styles.newDot} />}
         <View style={styles.reportInfo}>
           <Text style={styles.reportTitle} numberOfLines={1}>

@@ -1,11 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react/no-unstable-nested-components */
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, ActivityIndicator, RefreshControl, ImageBackground } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, FlatList, ActivityIndicator, RefreshControl, ImageBackground, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FileBarChart2, AlertCircle } from 'lucide-react-native';
+import { FileBarChart2, AlertCircle, Plus } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '@env';
 
 import { styles } from '../../styles/styles';
@@ -15,18 +16,52 @@ import { QuickMenu } from '../../components/QuickMenu';
 
 const BASE_URL = API_URL;
 const PAGE_SIZE = 100;
-const QUICK_FILTERS = ['Tất cả', 'Tuần này', 'Tháng này', 'Quý 1'];
+const REPORT_FILTERS = [
+  { key: 'all', label: 'Tất cả' },
+  { key: 'waiting', label: 'Chờ duyệt' },
+  { key: 'approved', label: 'Đã duyệt' },
+  { key: 'rejected', label: 'Từ chối' },
+  { key: 'draft', label: 'Bản nháp' },
+] as const;
+
+type ReportFilterKey = typeof REPORT_FILTERS[number]['key'];
+
+const normalizeReportStatus = (status?: string) => String(status || '').trim().toLowerCase();
+
+const matchesReportFilter = (status?: string, filterKey?: ReportFilterKey) => {
+  const normalized = normalizeReportStatus(status);
+
+  switch (filterKey) {
+    case 'waiting':
+      return normalized === 'waitingforapproval';
+    case 'approved':
+      return normalized === 'approved' || normalized === 'done';
+    case 'rejected':
+      return normalized === 'rejected' || normalized === 'declinedbytechnician' || normalized === 'reworkrequired';
+    case 'draft':
+      return normalized === 'created' || normalized === 'draft' || normalized === 'template' || normalized === 'pending';
+    case 'all':
+    default:
+      return true;
+  }
+};
 
 const TechnicianReportsScreen = () => {
-  const [] = useState(QUICK_FILTERS[0]);
+  const navigation = useNavigation<any>();
+  const [selectedFilter, setSelectedFilter] = useState<ReportFilterKey>('all');
   const [data, setData] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
   const [, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
+
+  const filteredData = useMemo(
+    () => data.filter((item: any) => matchesReportFilter(item.status, selectedFilter)),
+    [data, selectedFilter],
+  );
 
   const fetchReports = useCallback(async (pageNo: number, replace: boolean) => {
     if (replace) setLoading(true); else setLoadingMore(true);
@@ -36,11 +71,15 @@ const TechnicianReportsScreen = () => {
       const json = await res.json();
 
       const fetchedData = json.data ?? [];
-      setData(prev => replace ? fetchedData : [...prev, ...fetchedData]);
+      setData(prev => {
+        const nextData = replace ? fetchedData : [...prev, ...fetchedData];
+        const pending = nextData.filter((item: any) => item.status === 'WaitingForApproval').length;
+        setPendingCount(pending);
+        return nextData;
+      });
       setTotalCount(json.totalCount ?? 0);
       setHasMore(pageNo < (json.pageCount ?? 1));
-      const pending = fetchedData.filter((item: any) => item.status === 'WaitingForApproval').length;
-      setPendingCount(pending);
+      setPage(pageNo);
     } catch (e) {
       console.error(e);
     } finally {
@@ -64,9 +103,48 @@ const TechnicianReportsScreen = () => {
           <Text style={styles.metricTitle}>Đang chờ{"\n"}xử lý</Text>
         </View>
       </View>
+
+      <Text style={styles.sectionTitle}>Bộ lọc</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterContainer}
+      >
+        {REPORT_FILTERS.map((filter) => {
+          const isActive = selectedFilter === filter.key;
+
+          return (
+            <TouchableOpacity
+              key={filter.key}
+              style={[styles.chip, isActive && styles.chipActive]}
+              onPress={() => setSelectedFilter(filter.key)}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
       <Text style={styles.sectionTitle}>Danh sách báo cáo</Text>
     </View>
   );
+
+  const EmptyList = () => {
+    const isOriginalEmpty = data.length === 0;
+
+    return (
+      <View style={styles.center}>
+        <Text style={styles.sectionTitle}>
+          {isOriginalEmpty
+            ? 'Danh sách báo cáo đang trống.'
+            : 'Không có báo cáo phù hợp với bộ lọc này.'}
+        </Text>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -88,16 +166,31 @@ const TechnicianReportsScreen = () => {
       </View>
 
       <FlatList
-        data={data}
+        data={filteredData}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.scrollContent}
         ListHeaderComponent={ListHeader}
-        renderItem={({ item, index }) => <ReportItem item={item} index={index} />}
+        renderItem={({ item, index }) => (
+          <ReportItem
+            item={item}
+            index={index}
+            onPress={() => navigation.navigate('ReportDetail', { monitoringLogId: item.id })}
+          />
+        )}
+        ListEmptyComponent={!loadingMore ? <EmptyList /> : null}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchReports(1, true)} tintColor="#1F3D2F" />}
         onEndReached={() => !loadingMore && hasMore && fetchReports(page + 1, false)}
         ListFooterComponent={loadingMore ? <ActivityIndicator color="#1F3D2F" /> : null}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
       />
+
+      <TouchableOpacity
+        style={styles.floatingCreateButton}
+        activeOpacity={0.88}
+        onPress={() => navigation.navigate('CreateReport')}
+      >
+        <Plus size={22} color="#FFFFFF" />
+      </TouchableOpacity>
 
       <CustomTabBar />
     </SafeAreaView>

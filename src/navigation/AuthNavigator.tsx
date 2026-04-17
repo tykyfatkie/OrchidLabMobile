@@ -2,6 +2,8 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/LoginScreen/LoginScreen';
 import ReportsScreen from '../screens/Reports/ReportsScreen';
+import ReportDetailScreen from '../screens/Reports/ReportDetailScreen';
+import CreateReportScreen from '../screens/Reports/CreateReportScreen.tsx';
 import ExperimentLogScreen from '../screens/ExperimentLog/ExperimentLogScreen';
 import ExperimentLogDetailScreen from '../screens/ExperimentLog/ExperimentLogDetailScreen';
 import SamplesScreen from '../screens/Samples/SamplesScreen';
@@ -22,6 +24,8 @@ export const AuthNavigator = () => {
     >
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="TechnicianReports" component={ReportsScreen} />
+      <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+      <Stack.Screen name="CreateReport" component={CreateReportScreen} />
       <Stack.Screen name="ExperimentLog" component={ExperimentLogScreen} />
       <Stack.Screen name="ExperimentLogDetail" component={ExperimentLogDetailScreen} />
       <Stack.Screen name="Samples" component={SamplesScreen} />
