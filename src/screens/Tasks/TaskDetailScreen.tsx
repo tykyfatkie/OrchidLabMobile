@@ -517,8 +517,6 @@ const TaskDetailScreen = () => {
         />
       </ImageBackground>
 
-      <QuickMenu />
-
       <View style={styles.headerWrap}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.8}>
           <ArrowLeft size={20} color="#1F3D2F" />

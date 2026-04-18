@@ -515,8 +515,6 @@ const ExperimentLogDetailScreen = () => {
         />
       </ImageBackground>
 
-      <QuickMenu />
-
       <View style={styles.headerWrap}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.85}>
           <ArrowLeft size={18} color="#1F3D2F" />

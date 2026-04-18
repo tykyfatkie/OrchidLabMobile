@@ -10,6 +10,7 @@ export const sampleDetailStyles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 12,
+    paddingRight: 64,
     flexDirection: 'row',
     alignItems: 'center',
   },
