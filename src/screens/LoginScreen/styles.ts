@@ -51,38 +51,28 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
   },
-  heroCard: {
-    alignItems: 'center',
-  },
-  heroBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#DCE8DD',
-    shadowColor: '#1F3D2F',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
-    marginBottom: 14,
-  },
+  // --- Glass card: bỏ backgroundColor, dùng overflow hidden để blur không tràn ---
   glassCard: {
     position: 'absolute',
     alignSelf: 'center',
     width: SCREEN_W * 0.88,
-    backgroundColor: '#FFFFFF',
     borderRadius: 30,
-    padding: 22,
+    overflow: 'hidden',          // bắt buộc để BlurView bị clip theo borderRadius
     borderWidth: 1,
-    borderColor: '#E4ECE4',
+    borderColor: 'rgba(255,255,255,0.45)',
     shadowColor: '#1F3D2F',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.18,
     shadowRadius: 24,
     elevation: 5,
+  },
+  // BlurView trải full card
+  blurFill: {
+    ...StyleSheet.absoluteFill,
+  },
+  // Nội dung form đặt trên blur
+  cardInner: {
+    padding: 22,
   },
   cardTitle: {
     fontSize: 24,
@@ -91,15 +81,6 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
-  cardSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#4F6658',
-    textAlign: 'center',
-    marginBottom: 18,
-    fontWeight: '600',
-  },
-
   ctaGradient: {
     minHeight: 50,
     borderRadius: 14,
@@ -141,6 +122,6 @@ export const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F3F7F3',
+    backgroundColor: 'rgba(243,247,243,0.6)',
   },
 });

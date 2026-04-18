@@ -1,7 +1,6 @@
 if(NOT TARGET react-native-reanimated::reanimated)
-add_library(react-native-reanimated::reanimated SHARED IMPORTED)
+add_library(react-native-reanimated::reanimated INTERFACE IMPORTED)
 set_target_properties(react-native-reanimated::reanimated PROPERTIES
-    IMPORTED_LOCATION "D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-reanimated/android/build/intermediates/cxx/Debug/f1x6k1p5/obj/x86/libreanimated.so"
     INTERFACE_INCLUDE_DIRECTORIES "D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-reanimated/android/build/prefab-headers/reanimated"
     INTERFACE_LINK_LIBRARIES ""
 )

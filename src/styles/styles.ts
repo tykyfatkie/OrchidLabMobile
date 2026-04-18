@@ -47,7 +47,7 @@ export const styles = StyleSheet.create({
   statusPending: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#1F3D2F', borderStyle: 'dashed' },
   statusText: { fontSize: 12, fontWeight: '700', color: '#1F3D2F' },
   tabBarContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? 22 : 18, left: 12, right: 12, height: Platform.OS === 'ios' ? 90 : 70, backgroundColor: '#1F3D2F', borderTopLeftRadius: 30, borderTopRightRadius: 30, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingHorizontal: 10, paddingBottom: Platform.OS === 'ios' ? 24 : 6, shadowColor: '#000', shadowOpacity: 0.18, shadowOffset: { width: 0, height: -5 }, shadowRadius: 15, elevation: 12 },
-  tabItem: { alignItems: 'center', justifyContent: 'center', width: 70 },
+  tabItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
   iconWrapper: { padding: 8, borderRadius: 20 },
   iconWrapperActive: { backgroundColor: 'rgba(163, 247, 191, 0.15)' },
   tabLabel: { fontSize: 10, fontWeight: '600', color: '#8A9E92', marginTop: 4 },

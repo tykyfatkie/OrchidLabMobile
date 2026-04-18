@@ -20,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import LinearGradient from 'react-native-linear-gradient';
+import { BlurView } from '@react-native-community/blur';
 import { useNavigation } from '@react-navigation/native';
 import { ChevronRight, ChevronUp, Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
 
@@ -31,7 +32,6 @@ import { styles } from './styles';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 const SWIPE_LIMIT = 220;
-
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -70,21 +70,24 @@ const LoginScreen: React.FC = () => {
       }
     });
 
-  const formStyle = useAnimatedStyle(() => {
-    return {
-      opacity: interpolate(dragY.value, [-60, -SWIPE_LIMIT], [0, 1], Extrapolation.CLAMP),
-      transform: [
-        {
-          translateY: interpolate(
-            dragY.value,
-            [0, -SWIPE_LIMIT],
-            [SCREEN_H * 0.6, SCREEN_H * 0.28],
-            Extrapolation.CLAMP,
-          ),
-        },
-      ],
-    };
-  });
+  // Ảnh nền 2 fade in khi vuốt lên
+  const bg2AnimStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(dragY.value, [0, -SWIPE_LIMIT], [0, 1], Extrapolation.CLAMP),
+  }));
+
+  const formStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(dragY.value, [-60, -SWIPE_LIMIT], [0, 1], Extrapolation.CLAMP),
+    transform: [
+      {
+        translateY: interpolate(
+          dragY.value,
+          [0, -SWIPE_LIMIT],
+          [SCREEN_H * 0.6, SCREEN_H * 0.28],
+          Extrapolation.CLAMP,
+        ),
+      },
+    ],
+  }));
 
   const headerAnim = useAnimatedStyle(() => ({
     opacity: interpolate(dragY.value, [0, -80], [1, 0], Extrapolation.CLAMP),
@@ -138,19 +141,28 @@ const LoginScreen: React.FC = () => {
   };
 
   const handlePasswordSubmit = () => {
-    if (!loading) {
-      handleLogin();
-    }
+    if (!loading) handleLogin();
   };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       <View style={styles.root}>
-        <Animated.View style={styles.bgContainer}>
-          <Image 
-            source={require('../../assets/images/loginBackground.jpg')} 
-            style={styles.bgImage} 
+
+        {/* Background 1 — luôn hiển thị */}
+        <View style={styles.bgContainer}>
+          <Image
+            source={require('../../assets/images/loginBackground.jpg')}
+            style={styles.bgImage}
+            resizeMode="cover"
+          />
+        </View>
+
+        {/* Background 2 — fade in khi vuốt lên */}
+        <Animated.View style={[styles.bgContainer, bg2AnimStyle]}>
+          <Image
+            source={require('../../assets/images/loginBackground2.jpg')}
+            style={styles.bgImage}
             resizeMode="cover"
           />
         </Animated.View>
@@ -159,15 +171,23 @@ const LoginScreen: React.FC = () => {
 
         <GestureDetector gesture={gesture}>
           <View style={styles.contentContainer}>
-            
+
             <Animated.View style={[styles.headlineWrap, headerAnim]}>
               <Text style={styles.headlineHello}>{getGreeting()}</Text>
               <Text style={styles.headlineSub}>Orchid Lab System</Text>
             </Animated.View>
 
-              <Animated.View style={[styles.glassCard, formStyle]}>
+            {/* Card với BlurView bên trong */}
+            <Animated.View style={[styles.glassCard, formStyle]}>
+              <BlurView
+                style={styles.blurFill}
+                blurType="light"       // "light" | "dark" | "xlight" | "prominent" | "regular"
+                blurAmount={18}
+                reducedTransparencyFallbackColor="rgba(255,255,255,0.82)"
+              />
+              {/* Nội dung form đặt trên blur */}
+              <View style={styles.cardInner}>
                 <Text style={styles.cardTitle}>Chào mừng!</Text>
-                {/* <Text style={styles.cardSubtitle}>Vuốt lên để mở form đăng nhập.</Text> */}
 
                 <Text style={styles.fieldLabel}>Email</Text>
                 <AnimatedInput
@@ -213,12 +233,14 @@ const LoginScreen: React.FC = () => {
                     )}
                   </LinearGradient>
                 </TouchableOpacity>
-              </Animated.View>
+              </View>
+            </Animated.View>
 
             <Animated.View style={[styles.swipeHint, headerAnim]}>
-               <ChevronUp color="#FFF" size={20} />
-               <Text style={styles.swipeText}>VUỐT LÊN ĐỂ ĐĂNG NHẬP</Text>
+              <ChevronUp color="#FFF" size={20} />
+              <Text style={styles.swipeText}>VUỐT LÊN ĐỂ ĐĂNG NHẬP</Text>
             </Animated.View>
+
           </View>
         </GestureDetector>
       </View>
