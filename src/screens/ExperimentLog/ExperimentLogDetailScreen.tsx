@@ -17,7 +17,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { API_URL } from '@env';
 
 import { CustomTabBar } from '../../components/CustomTabBar';
-import { QuickMenu } from '../../components/QuickMenu';
 import { translateStatusVi } from '../../utils/statusTranslations';
 import { experimentLogDetailStyles as styles } from './experimentLogDetailStyles';
 

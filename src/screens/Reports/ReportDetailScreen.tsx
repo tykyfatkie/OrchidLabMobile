@@ -18,7 +18,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { API_URL } from '@env';
 
 import { CustomTabBar } from '../../components/CustomTabBar';
-import { QuickMenu } from '../../components/QuickMenu';
 import { translateMatchResultVi, translateMonitoringMetricVi, translateMonitoringTermVi } from '../../utils/monitoringTranslations';
 import { translateStatusVi } from '../../utils/statusTranslations';
 import { reportDetailStyles as styles } from './reportDetailStyles';

@@ -19,7 +19,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Asset, launchImageLibrary } from 'react-native-image-picker';
 import { API_URL } from '@env';
 
-import { QuickMenu } from '../../components/QuickMenu';
 import { CustomTabBar } from '../../components/CustomTabBar';
 import {
   translateDiseaseIncidentStatusVi,

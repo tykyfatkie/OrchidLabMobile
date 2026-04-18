@@ -18,7 +18,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Asset, launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { API_URL } from '@env';
 
-import { QuickMenu } from '../../components/QuickMenu';
 import { CustomTabBar } from '../../components/CustomTabBar';
 import { taskDetailStyles as styles } from './taskDetailStyles';
 import { translateChecklistStatusVi, translateTaskStatusVi } from '../../utils/statusTranslations';
@@ -64,6 +63,7 @@ interface ItemDraftState {
   measuredValue: string;
   measurementUnit: string;
   selectedImages: Asset[];
+  editing: boolean; // thêm flag để kiểm soát hiển thị form
 }
 
 const getTaskStatusStyle = (status: string) => {
@@ -85,8 +85,7 @@ const getChecklistStatusStyle = (status: string) => {
 };
 
 const isChecklistCompleteStatus = (status: string) => {
-  const normalized = status.toLowerCase();
-  return normalized === 'complete';
+  return status.toLowerCase() === 'complete';
 };
 
 const getExpectedText = (item: CheckListItem) => {
@@ -94,12 +93,8 @@ const getExpectedText = (item: CheckListItem) => {
   if (item.expectedMinValue !== null && item.expectedMaxValue !== null) {
     return `${item.expectedMinValue} - ${item.expectedMaxValue}${unit}`;
   }
-  if (item.expectedMinValue !== null) {
-    return `>= ${item.expectedMinValue}${unit}`;
-  }
-  if (item.expectedMaxValue !== null) {
-    return `<= ${item.expectedMaxValue}${unit}`;
-  }
+  if (item.expectedMinValue !== null) return `>= ${item.expectedMinValue}${unit}`;
+  if (item.expectedMaxValue !== null) return `<= ${item.expectedMaxValue}${unit}`;
   return 'Không yêu cầu đo';
 };
 
@@ -117,7 +112,6 @@ const cleanBaseUrl = String(API_URL).trim().replace(/\/+$/, '');
 const parseErrorMessage = async (res: Response, fallback: string) => {
   const raw = await res.text();
   if (!raw) return fallback;
-
   try {
     const json = JSON.parse(raw);
     return json?.detail || json?.message || fallback;
@@ -164,10 +158,8 @@ const TaskDetailScreen = () => {
       setLoading(false);
       return;
     }
-
     setLoading(true);
     setError('');
-
     try {
       const res = await fetch(`${cleanBaseUrl}/api/tasks/${taskId}`, {
         headers: getAuthHeaders(),
@@ -176,10 +168,8 @@ const TaskDetailScreen = () => {
         const message = await parseErrorMessage(res, 'Không thể tải chi tiết công việc');
         throw new Error(message);
       }
-
       const raw = await res.text();
       const json = raw ? JSON.parse(raw) : null;
-
       setTask(json as TaskDetail);
       const fetchedItems = (json?.taskCheckList?.checkListItemDtos ?? []) as CheckListItem[];
       setCheckItems(fetchedItems.sort((a, b) => a.order - b.order));
@@ -206,13 +196,12 @@ const TaskDetailScreen = () => {
 
   const getItemDraft = useCallback(
     (item: CheckListItem): ItemDraftState => {
-      const found = draftMap[item.id];
-      if (found) return found;
-
+      if (item.id in draftMap) return draftMap[item.id];
       return {
         measuredValue: String(item.measuredValue ?? item.mesuredValue ?? ''),
         measurementUnit: item.measurementUnit ?? '',
         selectedImages: [],
+        editing: false,
       };
     },
     [draftMap],
@@ -224,72 +213,55 @@ const TaskDetailScreen = () => {
         measuredValue: '',
         measurementUnit: '',
         selectedImages: [],
+        editing: false,
       };
-
-      return {
-        ...prev,
-        [itemId]: {
-          ...current,
-          ...next,
-        },
-      };
+      return { ...prev, [itemId]: { ...current, ...next } };
     });
   }, []);
 
   const handleStartItem = useCallback(
     async (itemId: string) => {
       if (!taskId) return;
-
       setStartingItemId(itemId);
       try {
         const res = await fetch(`${cleanBaseUrl}/api/tasks/${taskId}/checklist-items/${itemId}`, {
           method: 'POST',
           headers: getAuthHeaders(),
         });
-
         if (!res.ok) {
           const message = await parseErrorMessage(res, `Không thể bắt đầu checklist item (HTTP ${res.status})`);
           throw new Error(message);
         }
-
         setCheckItems((prev) =>
-          prev.map((item) =>
-            item.id === itemId
-              ? {
-                  ...item,
-                  status: 'InProgress',
-                }
-              : item,
-          ),
+          prev.map((item) => (item.id === itemId ? { ...item, status: 'InProgress' } : item)),
         );
+        // Tự động mở form sau khi bắt đầu
+        updateDraft(itemId, { editing: true, measuredValue: '', measurementUnit: '', selectedImages: [] });
       } catch (e: any) {
         Alert.alert('Lỗi', String(e?.message || 'Không thể bắt đầu checklist item'));
       } finally {
         setStartingItemId(null);
       }
     },
-    [taskId, getAuthHeaders],
+    [taskId, getAuthHeaders, updateDraft],
   );
 
-  const handleCancelEdit = useCallback(
-    (item: CheckListItem) => {
-      updateDraft(item.id, {
-        measuredValue: '',
-        measurementUnit: '',
-        selectedImages: [],
-      });
-    },
-    [updateDraft],
-  );
+  // Hủy: ẩn form, giữ nguyên status InProgress
+  const handleCancelEdit = useCallback((itemId: string) => {
+    setDraftMap((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
+  }, []);
 
   const handleOpenEvidenceModal = useCallback(
     (item: CheckListItem) => {
       const draft = getItemDraft(item);
       if (!draft.measuredValue.trim()) {
-        Alert.alert('Thiếu dữ liệu', 'Vui lòng nhập measuredValue trước khi hoàn thành.');
+        Alert.alert('Thiếu dữ liệu', 'Vui lòng nhập giá trị đo trước khi hoàn thành.');
         return;
       }
-
       setActiveModalItemId(item.id);
     },
     [getItemDraft],
@@ -298,7 +270,6 @@ const TaskDetailScreen = () => {
   const appendAssets = useCallback(
     (itemId: string, assets?: Asset[]) => {
       if (!assets || assets.length === 0) return;
-
       updateDraft(itemId, {
         selectedImages: [...(draftMap[itemId]?.selectedImages ?? []), ...assets.filter((a) => !!a.uri)],
       });
@@ -308,58 +279,33 @@ const TaskDetailScreen = () => {
 
   const handleTakePhoto = useCallback(() => {
     if (!activeModalItemId) return;
-
-    launchCamera(
-      {
-        mediaType: 'photo',
-        saveToPhotos: false,
-      },
-      (result) => {
-        if (result.didCancel) return;
-        if (result.errorMessage) {
-          Alert.alert('Lỗi', result.errorMessage);
-          return;
-        }
-        appendAssets(activeModalItemId, result.assets);
-      },
-    );
+    launchCamera({ mediaType: 'photo', saveToPhotos: false }, (result) => {
+      if (result.didCancel) return;
+      if (result.errorMessage) { Alert.alert('Lỗi', result.errorMessage); return; }
+      appendAssets(activeModalItemId, result.assets);
+    });
   }, [activeModalItemId, appendAssets]);
 
   const handlePickFromGallery = useCallback(() => {
     if (!activeModalItemId) return;
-
-    launchImageLibrary(
-      {
-        mediaType: 'photo',
-        selectionLimit: 0,
-      },
-      (result) => {
-        if (result.didCancel) return;
-        if (result.errorMessage) {
-          Alert.alert('Lỗi', result.errorMessage);
-          return;
-        }
-        appendAssets(activeModalItemId, result.assets);
-      },
-    );
+    launchImageLibrary({ mediaType: 'photo', selectionLimit: 0 }, (result) => {
+      if (result.didCancel) return;
+      if (result.errorMessage) { Alert.alert('Lỗi', result.errorMessage); return; }
+      appendAssets(activeModalItemId, result.assets);
+    });
   }, [activeModalItemId, appendAssets]);
 
   const handleRemoveSelectedImage = useCallback(
     (itemId: string, indexToRemove: number) => {
       const current = draftMap[itemId]?.selectedImages ?? [];
-      updateDraft(itemId, {
-        selectedImages: current.filter((_, idx) => idx !== indexToRemove),
-      });
+      updateDraft(itemId, { selectedImages: current.filter((_, idx) => idx !== indexToRemove) });
     },
     [draftMap, updateDraft],
   );
 
   const uploadEvidenceImage = useCallback(
     async (asset: Asset) => {
-      if (!taskId || !asset.uri) {
-        throw new Error('Dữ liệu ảnh không hợp lệ');
-      }
-
+      if (!taskId || !asset.uri) throw new Error('Dữ liệu ảnh không hợp lệ');
       const form = new FormData();
       form.append('image', {
         uri: asset.uri,
@@ -368,21 +314,17 @@ const TaskDetailScreen = () => {
       } as any);
       form.append('targetType', 'Task');
       form.append('targetId', taskId);
-
       const res = await fetch(`${cleanBaseUrl}/api/images`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: form,
       });
-
       if (!res.ok) {
         const message = await parseErrorMessage(res, 'Upload ảnh thất bại');
         throw new Error(message);
       }
-
       const raw = await res.text();
       if (!raw) return '';
-
       try {
         const json = JSON.parse(raw);
         return String(json?.url || json?.value || json?.imageUrl || '');
@@ -395,7 +337,6 @@ const TaskDetailScreen = () => {
 
   const handleCompleteItem = useCallback(async () => {
     if (!taskId || !activeModalItem) return;
-
     const draft = getItemDraft(activeModalItem);
     if (!draft.measuredValue.trim()) {
       Alert.alert('Thiếu dữ liệu', 'measuredValue là bắt buộc.');
@@ -405,35 +346,25 @@ const TaskDetailScreen = () => {
       Alert.alert('Thiếu minh chứng', 'Vui lòng thêm ít nhất 1 ảnh trước khi hoàn thành.');
       return;
     }
-
     setCompletingItemId(activeModalItem.id);
-
     try {
       const uploadedUrls: string[] = [];
       for (const image of draft.selectedImages) {
         const imageUrl = await uploadEvidenceImage(image);
         if (imageUrl) uploadedUrls.push(imageUrl);
       }
-
       const payload = {
         measurementUnit: draft.measurementUnit.trim() || null,
         measuredValue: parseMeasuredValue(draft.measuredValue),
       };
-
       const completeRes = await fetch(
         `${cleanBaseUrl}/api/tasks/${taskId}/checklist-items/${activeModalItem.id}/update-actual-value`,
-        {
-          method: 'PUT',
-          headers: getAuthHeaders(true),
-          body: JSON.stringify(payload),
-        },
+        { method: 'PUT', headers: getAuthHeaders(true), body: JSON.stringify(payload) },
       );
-
       if (!completeRes.ok) {
         const message = await parseErrorMessage(completeRes, 'Không thể hoàn thành checklist item');
         throw new Error(message);
       }
-
       setCheckItems((prev) =>
         prev.map((item) =>
           item.id === activeModalItem.id
@@ -447,9 +378,11 @@ const TaskDetailScreen = () => {
             : item,
         ),
       );
-
-      updateDraft(activeModalItem.id, {
-        selectedImages: [],
+      // Xóa draft sau khi hoàn thành
+      setDraftMap((prev) => {
+        const next = { ...prev };
+        delete next[activeModalItem.id];
+        return next;
       });
       setActiveModalItemId(null);
       Alert.alert('Thành công', 'Checklist item đã được hoàn thành.');
@@ -458,20 +391,13 @@ const TaskDetailScreen = () => {
     } finally {
       setCompletingItemId(null);
     }
-  }, [activeModalItem, getItemDraft, taskId, updateDraft, uploadEvidenceImage, getAuthHeaders]);
+  }, [activeModalItem, getItemDraft, taskId, uploadEvidenceImage, getAuthHeaders]);
 
   if (loading) {
     return (
       <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-        <ImageBackground
-          source={require('../../assets/images/background.jpg')}
-          style={styles.bg}
-          resizeMode="cover"
-        >
-          <LinearGradient
-            colors={['rgba(223,231,223,0.85)', 'rgba(242,246,242,0.85)']}
-            style={styles.bgGradient}
-          />
+        <ImageBackground source={require('../../assets/images/background.jpg')} style={styles.bg} resizeMode="cover">
+          <LinearGradient colors={['rgba(223,231,223,0.85)', 'rgba(242,246,242,0.85)']} style={styles.bgGradient} />
         </ImageBackground>
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#1F3D2F" />
@@ -484,15 +410,8 @@ const TaskDetailScreen = () => {
   if (error || !task) {
     return (
       <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-        <ImageBackground
-          source={require('../../assets/images/background.jpg')}
-          style={styles.bg}
-          resizeMode="cover"
-        >
-          <LinearGradient
-            colors={['rgba(223,231,223,0.85)', 'rgba(242,246,242,0.85)']}
-            style={styles.bgGradient}
-          />
+        <ImageBackground source={require('../../assets/images/background.jpg')} style={styles.bg} resizeMode="cover">
+          <LinearGradient colors={['rgba(223,231,223,0.85)', 'rgba(242,246,242,0.85)']} style={styles.bgGradient} />
         </ImageBackground>
         <View style={styles.center}>
           <Text style={styles.errorText}>{error || 'Không có dữ liệu task.'}</Text>
@@ -506,15 +425,8 @@ const TaskDetailScreen = () => {
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-      <ImageBackground
-        source={require('../../assets/images/background.jpg')}
-        style={styles.bg}
-        resizeMode="cover"
-      >
-        <LinearGradient
-          colors={['rgba(223,231,223,0.85)', 'rgba(242,246,242,0.85)']}
-          style={styles.bgGradient}
-        />
+      <ImageBackground source={require('../../assets/images/background.jpg')} style={styles.bg} resizeMode="cover">
+        <LinearGradient colors={['rgba(223,231,223,0.85)', 'rgba(242,246,242,0.85)']} style={styles.bgGradient} />
       </ImageBackground>
 
       <View style={styles.headerWrap}>
@@ -531,13 +443,11 @@ const TaskDetailScreen = () => {
             <Text style={styles.taskTitle}>{task.name}</Text>
             <Text style={styles.taskDescription}>{task.description || 'Không có mô tả'}</Text>
             <Text style={styles.metaText}>Task ID: {task.id || 'N/A'}</Text>
-
             <View style={styles.rowBetween}>
               <View style={[styles.statusTag, getTaskStatusStyle(task.status)]}>
                 <Text style={styles.statusText}>{translateTaskStatusVi(task.status || 'Unknown')}</Text>
               </View>
             </View>
-
             <Text style={styles.metaText}>Người tạo: {task.createdBy || 'N/A'}</Text>
             <Text style={styles.metaText}>Ngày tạo: {formatDate(task.createdDate)}</Text>
           </View>
@@ -553,7 +463,6 @@ const TaskDetailScreen = () => {
                 const name = attr.chemicalName || attr.materialName || 'N/A';
                 const value = attr.value !== null ? String(attr.value) : 'N/A';
                 const unit = attr.unit ? ` ${attr.unit}` : '';
-
                 return (
                   <View
                     key={`${name}-${idx}`}
@@ -581,6 +490,9 @@ const TaskDetailScreen = () => {
                 const isDone = isChecklistCompleteStatus(item.status);
                 const isInProgress = item.status?.toLowerCase() === 'inprogress';
                 const draft = getItemDraft(item);
+                // Form chỉ hiện khi đang InProgress VÀ editing = true
+                const showEditor = isInProgress && draft.editing;
+
                 return (
                   <View key={item.id} style={styles.checklistItem}>
                     <View style={styles.checklistTop}>
@@ -602,7 +514,7 @@ const TaskDetailScreen = () => {
                       </View>
                     </View>
 
-                    {item.status.toLowerCase() === 'pending' ? (
+                    {item.status.toLowerCase() === 'pending' && (
                       <TouchableOpacity
                         style={[styles.primaryButton, styles.checklistActionSpacing]}
                         onPress={() => handleStartItem(item.id)}
@@ -615,9 +527,20 @@ const TaskDetailScreen = () => {
                           <Text style={styles.primaryButtonText}>Bắt đầu</Text>
                         )}
                       </TouchableOpacity>
-                    ) : null}
+                    )}
 
-                    {isInProgress ? (
+                    {/* Nút mở form khi InProgress nhưng chưa editing */}
+                    {isInProgress && !showEditor && (
+                      <TouchableOpacity
+                        style={[styles.primaryButton, styles.checklistActionSpacing]}
+                        onPress={() => updateDraft(item.id, { editing: true })}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={styles.primaryButtonText}>Nhập kết quả</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {showEditor && (
                       <View style={styles.editorWrap}>
                         <Text style={styles.inputLabel}>Measured Value *</Text>
                         <TextInput
@@ -628,7 +551,6 @@ const TaskDetailScreen = () => {
                           value={draft.measuredValue}
                           onChangeText={(value) => updateDraft(item.id, { measuredValue: value })}
                         />
-
                         <Text style={styles.inputLabel}>Measurement Unit (tùy chọn)</Text>
                         <TextInput
                           style={styles.input}
@@ -637,16 +559,14 @@ const TaskDetailScreen = () => {
                           value={draft.measurementUnit}
                           onChangeText={(value) => updateDraft(item.id, { measurementUnit: value })}
                         />
-
                         <View style={styles.rowActions}>
                           <TouchableOpacity
                             style={[styles.secondaryButton, styles.actionHalf]}
-                            onPress={() => handleCancelEdit(item)}
+                            onPress={() => handleCancelEdit(item.id)}
                             activeOpacity={0.85}
                           >
                             <Text style={styles.secondaryButtonText}>Hủy</Text>
                           </TouchableOpacity>
-
                           <TouchableOpacity
                             style={[styles.primaryButton, styles.actionHalf]}
                             onPress={() => handleOpenEvidenceModal(item)}
@@ -656,15 +576,14 @@ const TaskDetailScreen = () => {
                           </TouchableOpacity>
                         </View>
                       </View>
-                    ) : null}
+                    )}
 
-                    {isDone ? (
+                    {isDone && (
                       <View style={styles.completeInfoWrap}>
                         <Text style={styles.checklistMeta}>
                           Measured: {String(item.measuredValue ?? item.mesuredValue ?? 'N/A')}
                           {item.measurementUnit ? ` ${item.measurementUnit}` : ''}
                         </Text>
-
                         {(item.evidenceImageUrls ?? []).length > 0 ? (
                           <View style={styles.evidenceGrid}>
                             {(item.evidenceImageUrls ?? []).map((url, idx) => (
@@ -675,7 +594,7 @@ const TaskDetailScreen = () => {
                           <Text style={styles.checklistMeta}>Chưa có ảnh minh chứng.</Text>
                         )}
                       </View>
-                    ) : null}
+                    )}
                   </View>
                 );
               })
@@ -685,20 +604,12 @@ const TaskDetailScreen = () => {
 
         <View style={styles.section}>
           <TouchableOpacity
-            style={[
-              styles.requestApprovalButton,
-              !isRequestApprovalEnabled ? styles.requestApprovalButtonDisabled : null,
-            ]}
+            style={[styles.requestApprovalButton, !isRequestApprovalEnabled ? styles.requestApprovalButtonDisabled : null]}
             disabled={!isRequestApprovalEnabled}
             onPress={() => Alert.alert('Sẵn sàng', 'Tất cả checklist item đã hoàn thành, bạn có thể gửi duyệt.')}
             activeOpacity={0.9}
           >
-            <Text
-              style={[
-                styles.requestApprovalText,
-                !isRequestApprovalEnabled ? styles.requestApprovalTextDisabled : null,
-              ]}
-            >
+            <Text style={[styles.requestApprovalText, !isRequestApprovalEnabled ? styles.requestApprovalTextDisabled : null]}>
               Yêu cầu duyệt
             </Text>
           </TouchableOpacity>
@@ -739,9 +650,7 @@ const TaskDetailScreen = () => {
                 <X size={18} color="#1F3D2F" />
               </TouchableOpacity>
             </View>
-
             <Text style={styles.modalDescription}>Thêm ảnh trước khi hoàn thành checklist item.</Text>
-
             {activeModalItem ? (
               <>
                 <View style={styles.rowActions}>
@@ -754,7 +663,6 @@ const TaskDetailScreen = () => {
                     <Camera size={16} color="#1F3D2F" />
                     <Text style={styles.secondaryButtonText}>Chụp ảnh</Text>
                   </TouchableOpacity>
-
                   <TouchableOpacity
                     style={[styles.secondaryButton, styles.actionHalf]}
                     onPress={handlePickFromGallery}
@@ -765,12 +673,10 @@ const TaskDetailScreen = () => {
                     <Text style={styles.secondaryButtonText}>Thư viện</Text>
                   </TouchableOpacity>
                 </View>
-
                 <View style={styles.previewHeader}>
                   <Text style={styles.previewTitle}>Ảnh đã chọn</Text>
                   <Text style={styles.previewCount}>{getItemDraft(activeModalItem).selectedImages.length} ảnh</Text>
                 </View>
-
                 <View style={styles.evidenceGrid}>
                   {getItemDraft(activeModalItem).selectedImages.length === 0 ? (
                     <Text style={styles.emptyText}>Chưa chọn ảnh.</Text>
@@ -790,7 +696,6 @@ const TaskDetailScreen = () => {
                     ))
                   )}
                 </View>
-
                 <TouchableOpacity
                   style={[styles.primaryButton, styles.modalSubmitSpacing]}
                   onPress={handleCompleteItem}
