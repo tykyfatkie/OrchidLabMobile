@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -959,7 +960,7 @@ const SampleDetailScreen = () => {
           <ArrowLeft size={18} color="#1F3D2F" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chi tiết mẫu vật</Text>
-        <View style={styles.backButton} pointerEvents="none" />
+        <View style={{ width: 36 }} pointerEvents="none" />
       </View>
 
       {loading ? (

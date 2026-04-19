@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -16,7 +17,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { API_URL } from '@env';
 
 import { CustomTabBar } from '../../components/CustomTabBar';
-import { QuickMenu } from '../../components/QuickMenu';
 import { translateStatusVi } from '../../utils/statusTranslations';
 import { translateBatchUnitVi } from '../../utils/batchTranslations';
 import { batchDetailStyles as styles } from './batchDetailStyles';
@@ -208,7 +208,7 @@ const BatchDetailScreen = () => {
           <ArrowLeft size={18} color="#1F3D2F" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chi tiết lô nuôi</Text>
-        <View style={styles.backButton} pointerEvents="none" />
+        <View style={{ width: 36 }} pointerEvents="none" />
       </View>
 
       {loading ? (
