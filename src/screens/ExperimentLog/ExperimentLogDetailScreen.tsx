@@ -349,12 +349,22 @@ const MethodStages = ({ method, currentStageOrder }: { method?: ExperimentMethod
   );
 };
 
-const SampleList = ({ samples }: { samples: SampleItem[] }) => {
+interface SampleListProps {
+  samples: SampleItem[];
+  onPressSample?: (id: string) => void;
+}
+
+const SampleList = ({ samples, onPressSample }: SampleListProps) => {
   const renderSampleItem = ({ item }: { item: SampleItem }) => {
     const isActive = String(item.status || '').toLowerCase() === 'inprogress';
 
     return (
-      <View style={[styles.sampleCard, isActive && styles.sampleCardActive]}>
+      <TouchableOpacity
+        style={[styles.sampleCard, isActive && styles.sampleCardActive]}
+        onPress={() => item.id && onPressSample?.(item.id)}
+        activeOpacity={0.82}
+        disabled={!item.id || !onPressSample}
+      >
         <View style={styles.sampleTopRow}>
           <Text style={styles.sampleTitle}>{toText(item.name)}</Text>
           <StatusBadge status={item.status} />
@@ -362,7 +372,7 @@ const SampleList = ({ samples }: { samples: SampleItem[] }) => {
         <Text style={styles.sampleMeta}>Giai đoạn hiện tại: {toText(item.currentSampleStage)}</Text>
         <Text style={styles.sampleMeta}>Ngày thực hiện: {formatDate(item.executionDate)}</Text>
         {item.notes ? <Text style={styles.sampleMeta}>Ghi chú: {item.notes}</Text> : null}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -477,6 +487,10 @@ const ExperimentLogDetailScreen = () => {
     fetchDetail();
   };
 
+  const handlePressSample = (sampleId: string) => {
+    navigation.navigate('SampleDetail', { sampleId });  
+  };
+
   const renderErrorFallback = () => (
     <View style={styles.center}>
       <View style={styles.errorCard}>
@@ -557,7 +571,7 @@ const ExperimentLogDetailScreen = () => {
             <InfoRow label="Trạng thái lô" value={translateStatusVi(detail?.batchStatus)} isLast />
           </SectionCard>
 
-          <SampleList samples={samples} />
+          <SampleList samples={samples} onPressSample={handlePressSample} />
 
           <ResultSection detail={detail ?? {}} />
         </ScrollView>
