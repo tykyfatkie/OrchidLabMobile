@@ -22,12 +22,21 @@ import { API_URL } from '@env';
 import { CustomTabBar } from '../../components/CustomTabBar';
 import { translateStatusVi } from '../../utils/statusTranslations';
 import { experimentLogDetailStyles as styles } from './experimentLogDetailStyles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const cleanBaseUrl = String(API_URL).trim().replace(/\/+$/, '');
 
-// =============================================================================
-// INTERFACES
-// =============================================================================
+const authFetch = async (url: string, options: RequestInit = {}) => {
+  const token = await AsyncStorage.getItem('@access_token'); 
+  return fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
+};
 
 interface TraitItem {
   id?: string;
@@ -107,6 +116,7 @@ interface ExperimentLogDetail {
   id?: string;
   name?: string;
   status?: string;
+   batchId?: number;
   currentStageOrder?: number | null;
   assignedTo?: string;
   createdBy?: string;
@@ -132,10 +142,6 @@ interface ExperimentLogDetail {
   recommendations?: string;
   expectedSampleCount?: number;
 }
-
-// =============================================================================
-// HELPERS
-// =============================================================================
 
 const toText = (value?: string | number | null, fallback = 'N/A') => {
   if (value === null || value === undefined) return fallback;
@@ -201,6 +207,7 @@ const normalizeExperimentLog = (raw: any): ExperimentLogDetail => {
     id: source.id,
     name: source.name,
     status: source.status,
+    batchId: source.batchId ?? batch.id ?? null,
     currentStageOrder: source.currentStageOrder ?? method.currentStageOrder ?? null,
     assignedTo: source.assignedTo ?? source.assignedToName,
     createdBy: source.createdBy ?? source.create_by,
@@ -1002,7 +1009,6 @@ const ExperimentLogDetailScreen = () => {
   const [error, setError] = useState('');
   const [creator, setCreator] = useState('');
 
-  // ── Action state ────────────────────────────────────────────
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -1011,7 +1017,6 @@ const ExperimentLogDetailScreen = () => {
   const [isProtocormModalOpen, setIsProtocormModalOpen] = useState(false);
   const [isCreatingProtocorm, setIsCreatingProtocorm] = useState(false);
 
-  // ── Fetch detail ────────────────────────────────────────────
   const fetchDetail = useCallback(async () => {
     if (!experimentLogId) {
       const msg = 'Không tìm thấy experimentLogId để tải chi tiết nhật ký.';
@@ -1024,7 +1029,7 @@ const ExperimentLogDetailScreen = () => {
     setLoading(true);
 
     try {
-      const res = await fetch(`${cleanBaseUrl}/api/experiment-logs/${experimentLogId}`);
+      const res = await authFetch(`${cleanBaseUrl}/api/experiment-logs/${experimentLogId}`);
       if (!res.ok) {
         const messageText = await res.text();
         let parsedMessage = `Không thể tải chi tiết nhật ký (HTTP ${res.status})`;
@@ -1054,7 +1059,6 @@ const ExperimentLogDetailScreen = () => {
 
   useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
-  // ── Fetch creator name ──────────────────────────────────────
   useEffect(() => {
     const createdBy = detail?.createdBy;
     if (!createdBy) return;
@@ -1068,13 +1072,12 @@ const ExperimentLogDetailScreen = () => {
       .catch(() => {});
   }, [detail?.createdBy]);
 
-  // ── Actions ─────────────────────────────────────────────────
 
   const handleStart = async () => {
     if (!experimentLogId) return;
     setIsUpdatingStatus(true);
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${cleanBaseUrl}/api/experiment-logs/${experimentLogId}/status`,
         {
           method: 'PUT',
@@ -1096,7 +1099,7 @@ const ExperimentLogDetailScreen = () => {
     if (!experimentLogId) return;
     setIsCancelling(true);
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${cleanBaseUrl}/api/experiment-logs/${experimentLogId}/cancel`,
         {
           method: 'PUT',
@@ -1116,35 +1119,44 @@ const ExperimentLogDetailScreen = () => {
   };
 
   const handleChangeStage = async () => {
-    if (!experimentLogId) return;
-    setIsChangingStage(true);
-    try {
-      const res = await fetch(
-        `${cleanBaseUrl}/api/experiment-logs/${experimentLogId}/status`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'WaitingForChangeStage' }),
-        },
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setDetail((prev) =>
-        prev ? { ...prev, status: 'WaitingForChangeStage' } : prev,
-      );
-      setIsChangeStageSuccessModalOpen(true);
-    } catch (e: any) {
-      const msg = String(e?.message || 'Không thể chuyển giai đoạn');
-      Alert.alert('Lỗi', msg);
-    } finally {
-      setIsChangingStage(false);
+  if (!experimentLogId || !detail) return;
+  setIsChangingStage(true);
+  try {
+    const res = await authFetch(
+      `${cleanBaseUrl}/api/experiment-logs/${experimentLogId}/status`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({
+          status: 'WaitingForChangeStage',
+          batchId: detail.batchId ?? 0,
+          conclusion: '',
+          issues: '',
+          recommendations: '',
+        }),
+      },
+    );
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.log('Change stage error:', errText);
+      throw new Error(`HTTP ${res.status}: ${errText}`);
     }
-  };
+
+    setDetail((prev) => prev ? { ...prev, status: 'WaitingForChangeStage' } : prev);
+    setIsChangeStageSuccessModalOpen(true);
+  } catch (e: any) {
+    const msg = String(e?.message || 'Không thể chuyển giai đoạn');
+    Alert.alert('Lỗi', msg);
+  } finally {
+    setIsChangingStage(false);
+  }
+};
 
   const handleCreateProtocorm = async (quantity: number) => {
     if (!experimentLogId || quantity <= 0) return;
     setIsCreatingProtocorm(true);
     try {
-      const res = await fetch(`${cleanBaseUrl}/api/samples`, {
+      const res = await authFetch(`${cleanBaseUrl}/api/samples`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ experimentLogId, quantity }),
@@ -1152,7 +1164,7 @@ const ExperimentLogDetailScreen = () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       // Refetch to get updated samples list
-      const refreshRes = await fetch(
+      const refreshRes = await authFetch(
         `${cleanBaseUrl}/api/experiment-logs/${experimentLogId}`,
       );
       if (refreshRes.ok) {
