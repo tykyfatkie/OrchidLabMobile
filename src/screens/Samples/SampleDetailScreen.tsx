@@ -1798,9 +1798,12 @@ const SampleDetailScreen = () => {
             >
               <Text style={styles.dangerButtonText}>Tiêu hủy mẫu vật</Text>
             </TouchableOpacity>
-            <Text style={styles.helperText}>
-              Điều kiện: mẫu chưa bị tiêu hủy trước đó và trạng thái giai đoạn hiện tại là Đang
-              thực hiện.
+              <Text style={[styles.helperText, { fontStyle: 'italic' }]}>
+                Điều kiện: Mẫu chưa bị tiêu hủy trước đó và trạng thái giai đoạn hiện tại là{' '}
+              <Text style={{ color: '#2C7A46', fontWeight: 'bold' }}>
+                Đang thực hiện
+              </Text>
+              .
             </Text>
           </SectionCard>
         </ScrollView>

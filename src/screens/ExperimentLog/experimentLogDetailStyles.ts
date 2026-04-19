@@ -1,16 +1,18 @@
 import { StyleSheet } from 'react-native';
 
 export const experimentLogDetailStyles = StyleSheet.create({
+  // ── Layout ─────────────────────────────────────────────────
   root: { flex: 1, backgroundColor: '#DFE7DF' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 },
   bg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   bgGradient: { flex: 1 },
   content: { paddingHorizontal: 24, paddingBottom: 120 },
+
+  // ── Page header ─────────────────────────────────────────────
   headerWrap: {
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 12,
-    paddingRight: 64,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -31,11 +33,75 @@ export const experimentLogDetailStyles = StyleSheet.create({
     marginRight: 12,
     flex: 1,
     textAlign: 'center',
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 22,
+    lineHeight: 28,
     fontWeight: '900',
     color: '#1F3D2F',
   },
+
+  // ── Action buttons bar ──────────────────────────────────────
+  actionRowWrap: {
+    marginBottom: 4,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+  },
+  btnStart: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#1F3D2F',
+    shadowColor: '#1F3D2F',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 3,
+    justifyContent: 'center', 
+    alignItems: 'center',     
+    minHeight: 40,
+  },
+  btnProtocorm: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#4E8B62',
+    shadowColor: '#4E8B62',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  btnChangeStage: {
+    height: 40,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#0e7c40',
+    shadowColor: '#1ed378',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  btnCancelAction: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#DC2626',
+    shadowColor: '#DC2626',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  btnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+
+  // ── Sections & cards ────────────────────────────────────────
   section: { marginBottom: 16 },
   sectionTitle: {
     fontSize: 17,
@@ -53,12 +119,11 @@ export const experimentLogDetailStyles = StyleSheet.create({
     elevation: 1,
   },
   cardTitle: {
-    fontSize: 21,
+    fontSize: 20,
     lineHeight: 28,
     fontWeight: '900',
     color: '#1F3D2F',
     textAlign: 'center',
-    width: '100%',
     marginBottom: 4,
   },
   cardSubTitle: {
@@ -69,6 +134,8 @@ export const experimentLogDetailStyles = StyleSheet.create({
     opacity: 0.7,
     fontWeight: '600',
   },
+
+  // ── Info rows ───────────────────────────────────────────────
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -78,9 +145,7 @@ export const experimentLogDetailStyles = StyleSheet.create({
     paddingVertical: 10,
     gap: 8,
   },
-  infoRowLast: {
-    borderBottomWidth: 0,
-  },
+  infoRowLast: { borderBottomWidth: 0 },
   infoLabel: {
     flex: 1,
     fontSize: 13,
@@ -97,9 +162,7 @@ export const experimentLogDetailStyles = StyleSheet.create({
     color: '#1F3D2F',
     fontWeight: '700',
   },
-  scientificName: {
-    fontStyle: 'italic',
-  },
+  scientificName: { fontStyle: 'italic' },
   bodyText: {
     fontSize: 14,
     lineHeight: 22,
@@ -107,9 +170,9 @@ export const experimentLogDetailStyles = StyleSheet.create({
     opacity: 0.85,
     fontWeight: '500',
   },
-  bodyTextSpacing: {
-    marginTop: 8,
-  },
+  bodyTextSpacing: { marginTop: 8 },
+
+  // ── Status badges ───────────────────────────────────────────
   statusTag: {
     marginTop: 10,
     alignSelf: 'center',
@@ -118,15 +181,15 @@ export const experimentLogDetailStyles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
   },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#1F3D2F',
-  },
+  statusText: { fontSize: 12, fontWeight: '800', color: '#1F3D2F' },
   statusCreated: { backgroundColor: '#E8F2FF', borderColor: '#3C78C1' },
   statusInProgress: { backgroundColor: '#FFF4E5', borderColor: '#E2A24B' },
   statusDone: { backgroundColor: '#A3F7BF', borderColor: '#4E8B62' },
+  statusWaiting: { backgroundColor: '#FEF3C7', borderColor: '#D97706' },   // NEW
+  statusDestroyed: { backgroundColor: '#FFE5E5', borderColor: '#DC2626' }, // NEW
   statusDefault: { backgroundColor: '#F2F6F2', borderColor: '#1F3D2F' },
+
+  // ── Stage cards ─────────────────────────────────────────────
   stageCard: {
     borderRadius: 18,
     borderWidth: 1,
@@ -135,9 +198,7 @@ export const experimentLogDetailStyles = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: '#FAFCFA',
   },
-  stageCardPast: {
-    opacity: 0.55,
-  },
+  stageCardPast: { opacity: 0.55 },
   stageCardCurrent: {
     borderColor: '#4E8B62',
     backgroundColor: '#F5FFF7',
@@ -146,13 +207,8 @@ export const experimentLogDetailStyles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2,
   },
-  stageCardUpcoming: {
-    backgroundColor: '#FBFDFC',
-  },
-  stageTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  stageCardUpcoming: { backgroundColor: '#FBFDFC' },
+  stageTop: { flexDirection: 'row', alignItems: 'center' },
   stageOrderBubble: {
     width: 28,
     height: 28,
@@ -162,19 +218,9 @@ export const experimentLogDetailStyles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 10,
   },
-  stageOrderText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#1F3D2F',
-  },
-  stageTitleWrap: {
-    flex: 1,
-  },
-  stageName: {
-    fontSize: 14,
-    color: '#1F3D2F',
-    fontWeight: '800',
-  },
+  stageOrderText: { fontSize: 12, fontWeight: '800', color: '#1F3D2F' },
+  stageTitleWrap: { flex: 1 },
+  stageName: { fontSize: 14, color: '#1F3D2F', fontWeight: '800' },
   stageMeta: {
     marginTop: 2,
     fontSize: 12,
@@ -189,11 +235,31 @@ export const experimentLogDetailStyles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: '#A3F7BF',
   },
-  stageCurrentPillText: {
-    fontSize: 10,
-    fontWeight: '800',
+  stageCurrentPillText: { fontSize: 10, fontWeight: '800', color: '#1F3D2F' },
+
+  // ── isSampleGenerated tag (NEW) ─────────────────────────────
+  stageTagRow: { flexDirection: 'row', marginTop: 8 },
+  isSampleTag: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  isSampleTagEnabled: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#4E8B62',
+  },
+  isSampleTagDisabled: {
+    backgroundColor: '#F3F4F6',
+    borderColor: '#9CA3AF',
+  },
+  isSampleTagText: {
+    fontSize: 11,
+    fontWeight: '700',
     color: '#1F3D2F',
   },
+
+  // ── Stage expand ────────────────────────────────────────────
   expandAction: {
     marginTop: 10,
     alignSelf: 'flex-end',
@@ -203,11 +269,7 @@ export const experimentLogDetailStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#1F3D2F',
   },
-  expandActionText: {
-    fontSize: 12,
-    color: '#1F3D2F',
-    fontWeight: '700',
-  },
+  expandActionText: { fontSize: 12, color: '#1F3D2F', fontWeight: '700' },
   stageDivider: {
     marginTop: 10,
     borderTopWidth: 1,
@@ -228,6 +290,55 @@ export const experimentLogDetailStyles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 2,
   },
+
+  // ── Chemicals & Materials (NEW) ─────────────────────────────
+  chemSectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#1F3D2F',
+    marginBottom: 8,
+  },
+  chemEmpty: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontStyle: 'italic',
+    marginBottom: 4,
+  },
+  chemGroup: { marginBottom: 10 },
+  chemCategory: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6B7280',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  chemItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 6,
+  },
+  chemDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#4E8B62',
+    marginTop: 5,
+  },
+  chemItemName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1F3D2F',
+    lineHeight: 18,
+  },
+  chemItemUnit: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 1,
+  },
+
+  // ── Sample cards ────────────────────────────────────────────
   sampleCard: {
     borderRadius: 20,
     backgroundColor: '#FFFFFF',
@@ -259,6 +370,8 @@ export const experimentLogDetailStyles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+
+  // ── Empty & error states ────────────────────────────────────
   emptyCard: {
     borderRadius: 18,
     backgroundColor: '#FFFFFF',
@@ -281,11 +394,7 @@ export const experimentLogDetailStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2A24B',
   },
-  errorTitle: {
-    fontSize: 16,
-    color: '#7A2E2E',
-    fontWeight: '800',
-  },
+  errorTitle: { fontSize: 16, color: '#7A2E2E', fontWeight: '800' },
   errorText: {
     marginTop: 6,
     fontSize: 13,
@@ -293,11 +402,7 @@ export const experimentLogDetailStyles = StyleSheet.create({
     color: '#7A2E2E',
     fontWeight: '600',
   },
-  errorActions: {
-    marginTop: 12,
-    flexDirection: 'row',
-    gap: 10,
-  },
+  errorActions: { marginTop: 12, flexDirection: 'row', gap: 10 },
   actionHalf: { flex: 1 },
   primaryButton: {
     height: 42,
@@ -306,11 +411,7 @@ export const experimentLogDetailStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  primaryButtonText: {
-    fontSize: 13,
-    color: '#FFFFFF',
-    fontWeight: '800',
-  },
+  primaryButtonText: { fontSize: 13, color: '#FFFFFF', fontWeight: '800' },
   secondaryButton: {
     height: 42,
     borderRadius: 12,
@@ -320,9 +421,114 @@ export const experimentLogDetailStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  secondaryButtonText: {
+  secondaryButtonText: { fontSize: 13, color: '#1F3D2F', fontWeight: '700' },
+
+  // ── Modals (NEW) ────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  modalBox: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    gap: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#1F3D2F',
+    textAlign: 'center',
+  },
+  modalLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1F3D2F',
+    opacity: 0.8,
+  },
+  modalInput: {
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#1F3D2F',
+    fontWeight: '500',
+    backgroundColor: '#F9FAFB',
+    minHeight: 80,
+  },
+  modalMessage: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#374151',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  modalSuccessIcon: {
+    alignSelf: 'center',
+    marginBottom: 4,
+  },
+  modalFooterRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  modalBtnPrimary: {
+    paddingVertical: 13,
+    borderRadius: 14,
+    backgroundColor: '#1F3D2F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBtnPrimaryText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  modalBtnSecondary: {
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBtnSecondaryText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#374151',
+  },
+  modalBtnDisabled: {
+    opacity: 0.4,
+  },
+
+  // ── Protocorm modal extras (NEW) ────────────────────────────
+  protocormInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  protocormInfoText: {
     fontSize: 13,
     color: '#1F3D2F',
+    fontWeight: '600',
+  },
+  protocormWarning: {
+    fontSize: 12,
+    color: '#D97706',
     fontWeight: '700',
   },
 });

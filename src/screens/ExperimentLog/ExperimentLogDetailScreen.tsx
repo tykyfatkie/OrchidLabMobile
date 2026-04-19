@@ -5,9 +5,11 @@ import {
   Alert,
   FlatList,
   ImageBackground,
+  Modal,
   RefreshControl,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -23,11 +25,37 @@ import { experimentLogDetailStyles as styles } from './experimentLogDetailStyles
 
 const cleanBaseUrl = String(API_URL).trim().replace(/\/+$/, '');
 
+// =============================================================================
+// INTERFACES
+// =============================================================================
+
 interface TraitItem {
   id?: string;
   name?: string;
   value?: string | number | null;
   unit?: string | null;
+}
+
+interface Chemical {
+  id?: string;
+  name?: string;
+  concentrationUnit?: string | null;
+  category?: string | null;
+}
+
+interface Material {
+  id?: string;
+  name?: string;
+  unit?: string | null;
+  category?: string | null;
+}
+
+interface StageChemical {
+  chemical?: Chemical;
+}
+
+interface StageMaterial {
+  material?: Material;
 }
 
 interface StageSystemItem {
@@ -41,11 +69,16 @@ interface MethodStage {
   id?: string;
   order?: number;
   durationDays?: number;
+  durationsDays?: number;
   stageDefinition?: {
     name?: string;
+    description?: string;
   } | null;
   materials?: StageSystemItem[];
   chemicals?: StageSystemItem[];
+  stageChemicals?: StageChemical[];
+  stageMaterials?: StageMaterial[];
+  isSampleGenerated?: boolean;
 }
 
 interface ExperimentMethod {
@@ -76,6 +109,7 @@ interface ExperimentLogDetail {
   status?: string;
   currentStageOrder?: number | null;
   assignedTo?: string;
+  createdBy?: string;
   startDate?: string | null;
   endDate?: string | null;
   batchName?: string;
@@ -96,7 +130,12 @@ interface ExperimentLogDetail {
   conclusion?: string;
   issues?: string;
   recommendations?: string;
+  expectedSampleCount?: number;
 }
+
+// =============================================================================
+// HELPERS
+// =============================================================================
 
 const toText = (value?: string | number | null, fallback = 'N/A') => {
   if (value === null || value === undefined) return fallback;
@@ -113,27 +152,26 @@ const formatDate = (iso?: string | null) => {
     .padStart(2, '0')}/${parsed.getFullYear()}`;
 };
 
-const getStatusStyle = (status?: string) => {
-  const normalized = String(status || '').toLowerCase();
+const normalizeStatus = (status?: string) => String(status ?? '').toLowerCase();
 
-  if (
-    normalized === 'completedintime' ||
-    normalized === 'completedouttime' ||
-    normalized === 'approved' ||
-    normalized === 'done' ||
-    normalized === 'completed'
-  ) {
+const getStatusStyle = (status?: string) => {
+  const n = normalizeStatus(status);
+
+  if (['completedintime', 'completedouttime', 'approved', 'done', 'completed'].includes(n)) {
     return styles.statusDone;
   }
-
-  if (normalized === 'inprogress' || normalized === 'waitingforapproval' || normalized === 'assigned') {
+  if (['inprogress', 'assigned'].includes(n)) {
     return styles.statusInProgress;
   }
-
-  if (normalized === 'created' || normalized === 'template' || normalized === 'pending') {
+  if (['waitingforapproval', 'waitingforchangestage'].includes(n)) {
+    return styles.statusWaiting;
+  }
+  if (['created', 'template', 'pending'].includes(n)) {
     return styles.statusCreated;
   }
-
+  if (['destroyed', 'failed', 'cancelled'].includes(n)) {
+    return styles.statusDestroyed;
+  }
   return styles.statusDefault;
 };
 
@@ -147,11 +185,16 @@ const normalizeExperimentLog = (raw: any): ExperimentLogDetail => {
     id: stage.id,
     order: stage.order,
     durationDays: stage.durationsDays ?? stage.durationDays,
+    durationsDays: stage.durationsDays ?? stage.durationDays,
     stageDefinition: {
       name: stage.stageDefinition?.name,
+      description: stage.stageDefinition?.description,
     },
     materials: stage.materials ?? [],
     chemicals: stage.chemicals ?? [],
+    stageChemicals: stage.stageChemicals ?? [],
+    stageMaterials: stage.stageMaterials ?? [],
+    isSampleGenerated: stage.isSampleGenerated ?? false,
   }));
 
   return {
@@ -160,9 +203,10 @@ const normalizeExperimentLog = (raw: any): ExperimentLogDetail => {
     status: source.status,
     currentStageOrder: source.currentStageOrder ?? method.currentStageOrder ?? null,
     assignedTo: source.assignedTo ?? source.assignedToName,
+    createdBy: source.createdBy ?? source.create_by,
     startDate: source.startDate,
     endDate: source.endDate,
-    batchName: source.batchName ?? batch.name,
+    batchName: source.batchName ?? batch.name ?? batch.batchName,
     labRoomName: source.labRoomName ?? batch.labRoomName,
     objective: source.objective,
     notes: source.notes,
@@ -185,8 +229,13 @@ const normalizeExperimentLog = (raw: any): ExperimentLogDetail => {
     conclusion: source.conclusion,
     issues: source.issues,
     recommendations: source.recommendations,
+    expectedSampleCount: source.expectedSampleCount,
   };
 };
+
+// =============================================================================
+// SHARED SMALL COMPONENTS
+// =============================================================================
 
 interface InfoRowProps {
   label: string;
@@ -214,7 +263,7 @@ const SectionCard = ({ title, children }: SectionCardProps) => (
   </View>
 );
 
-const SampleListSeparator = () => <View style={styles.section} />;
+const SampleListSeparator = () => <View style={{ height: 10 }} />;
 
 const StatusBadge = ({ status }: { status?: string }) => (
   <View style={[styles.statusTag, getStatusStyle(status)]}>
@@ -222,22 +271,453 @@ const StatusBadge = ({ status }: { status?: string }) => (
   </View>
 );
 
-const ExperimentHeader = ({ detail }: { detail: ExperimentLogDetail }) => (
+// =============================================================================
+// CANCEL MODAL
+// =============================================================================
+
+interface CancelModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onConfirm: (reason: string) => void;
+  isLoading: boolean;
+}
+
+const CancelModal = ({ visible, onClose, onConfirm, isLoading }: CancelModalProps) => {
+  const [reason, setReason] = useState('');
+
+  const handleConfirm = () => {
+    if (reason.trim()) {
+      onConfirm(reason.trim());
+      setReason('');
+    }
+  };
+
+  const handleClose = () => {
+    setReason('');
+    onClose();
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalBox}>
+          <Text style={styles.modalTitle}>Hủy thí nghiệm</Text>
+
+          <Text style={styles.modalLabel}>
+            Lý do hủy{' '}
+            <Text style={{ color: '#DC2626' }}>*</Text>
+          </Text>
+          <TextInput
+            style={styles.modalInput}
+            value={reason}
+            onChangeText={setReason}
+            placeholder="Nhập lý do hủy thí nghiệm..."
+            placeholderTextColor="#9CA3AF"
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+          />
+
+          <View style={styles.modalFooterRow}>
+            <TouchableOpacity
+              style={[styles.modalBtnSecondary, { flex: 1 }]}
+              onPress={handleClose}
+              disabled={isLoading}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.modalBtnSecondaryText}>Đóng</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.modalBtnPrimary,
+                { flex: 1, backgroundColor: '#DC2626' },
+                (!reason.trim() || isLoading) && styles.modalBtnDisabled,
+              ]}
+              onPress={handleConfirm}
+              disabled={!reason.trim() || isLoading}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.modalBtnPrimaryText}>
+                {isLoading ? 'Đang xử lý...' : 'Xác nhận'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// =============================================================================
+// CHANGE STAGE SUCCESS MODAL
+// =============================================================================
+
+interface ChangeStageSuccessModalProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+const ChangeStageSuccessModal = ({ visible, onClose }: ChangeStageSuccessModalProps) => (
+  <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalBox}>
+        <View style={styles.modalSuccessIcon}>
+          <CheckCircle2 size={36} color="#4E8B62" />
+        </View>
+        <Text style={styles.modalTitle}>Chuyển giai đoạn thành công</Text>
+        <Text style={styles.modalMessage}>
+          Yêu cầu chuyển giai đoạn đã được gửi thành công. Vui lòng chờ duyệt từ quản lý.
+        </Text>
+        <TouchableOpacity
+          style={[styles.modalBtnPrimary, { alignSelf: 'stretch' }]}
+          onPress={onClose}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.modalBtnPrimaryText}>Đóng</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+);
+
+// =============================================================================
+// CREATE PROTOCORM MODAL
+// =============================================================================
+
+interface CreateProtocormModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onConfirm: (quantity: number) => void;
+  isLoading: boolean;
+  expectedSampleCount?: number;
+  currentSampleCount: number;
+}
+
+const CreateProtocormModal = ({
+  visible,
+  onClose,
+  onConfirm,
+  isLoading,
+  expectedSampleCount,
+  currentSampleCount,
+}: CreateProtocormModalProps) => {
+  const [qty, setQty] = useState('');
+
+  const handleConfirm = () => {
+    const n = parseInt(qty, 10);
+    if (n > 0) {
+      onConfirm(n);
+      setQty('');
+    }
+  };
+
+  const handleClose = () => {
+    setQty('');
+    onClose();
+  };
+
+  const remaining = Math.max(0, (expectedSampleCount ?? 0) - currentSampleCount);
+  const parsedQty = parseInt(qty, 10) || 0;
+  const showWarning = parsedQty > remaining && remaining > 0;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalBox}>
+          <Text style={styles.modalTitle}>Tạo Protocorm</Text>
+
+          <View style={styles.protocormInfoRow}>
+            <Text style={styles.protocormInfoText}>
+              Mong muốn:{' '}
+              <Text style={{ fontWeight: '800' }}>{expectedSampleCount ?? 0}</Text>
+            </Text>
+            <Text style={styles.protocormInfoText}>
+              Hiện tại:{' '}
+              <Text style={{ fontWeight: '800' }}>{currentSampleCount}</Text>
+            </Text>
+          </View>
+
+          <Text style={styles.modalLabel}>
+            Số lượng{' '}
+            <Text style={{ color: '#DC2626' }}>*</Text>
+          </Text>
+          <TextInput
+            style={[styles.modalInput, { height: 48 }]}
+            value={qty}
+            onChangeText={(v) => {
+              if (v === '' || /^[1-9]\d*$/.test(v)) setQty(v);
+            }}
+            placeholder="Nhập số lượng..."
+            placeholderTextColor="#9CA3AF"
+            keyboardType="number-pad"
+          />
+
+          {showWarning && (
+            <Text style={styles.protocormWarning}>
+              ⚠ Vượt quá số lượng còn lại ({remaining})
+            </Text>
+          )}
+
+          <View style={styles.modalFooterRow}>
+            <TouchableOpacity
+              style={[styles.modalBtnSecondary, { flex: 1 }]}
+              onPress={handleClose}
+              disabled={isLoading}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.modalBtnSecondaryText}>Đóng</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.modalBtnPrimary,
+                { flex: 1 },
+                (!qty || parsedQty <= 0 || isLoading) && styles.modalBtnDisabled,
+              ]}
+              onPress={handleConfirm}
+              disabled={!qty || parsedQty <= 0 || isLoading}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.modalBtnPrimaryText}>
+                {isLoading ? 'Đang tạo...' : 'Tạo'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// =============================================================================
+// ACTION BUTTONS BAR
+// =============================================================================
+
+interface ActionButtonsProps {
+  detail: ExperimentLogDetail;
+  samples: SampleItem[];
+  onStart: () => void;
+  onCancel: () => void;
+  onChangeStage: () => void;
+  onCreateProtocorm: () => void;
+  isUpdatingStatus: boolean;
+  isChangingStage: boolean;
+}
+
+const ActionButtons = ({
+  detail,
+  samples,
+  onStart,
+  onCancel,
+  onChangeStage,
+  onCreateProtocorm,
+  isUpdatingStatus,
+  isChangingStage,
+}: ActionButtonsProps) => {
+  const status = normalizeStatus(detail.status);
+  const stages = detail.method?.methodStages ?? [];
+  const lastStageOrder =
+    stages.length > 0 ? Math.max(...stages.map((s) => s.order ?? 0)) : undefined;
+  const isLastStage =
+    detail.currentStageOrder != null &&
+    lastStageOrder != null &&
+    detail.currentStageOrder === lastStageOrder;
+
+  const currentStage = stages.find((s) => s.order === detail.currentStageOrder);
+  const canCreateProtocorm =
+    currentStage?.isSampleGenerated === true && samples.length === 0;
+
+  const showStart = status === 'created';
+  const showCancel = status === 'created';
+  const showChangeStage = status === 'inprogress' && !isLastStage;
+
+  if (!showStart && !showCancel && !showChangeStage && !canCreateProtocorm) {
+    return null;
+  }
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.actionRow}
+      style={styles.actionRowWrap}
+    >
+      {showStart && (
+        <TouchableOpacity
+          style={styles.btnStart}
+          onPress={onStart}
+          disabled={isUpdatingStatus}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.btnText}>
+            {isUpdatingStatus ? 'Đang xử lý...' : 'Bắt đầu'}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {canCreateProtocorm && (
+        <TouchableOpacity
+          style={styles.btnProtocorm}
+          onPress={onCreateProtocorm}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.btnText}>Tạo Protocorm</Text>
+        </TouchableOpacity>
+      )}
+
+      {showChangeStage && (
+        <TouchableOpacity
+          style={styles.btnChangeStage}
+          onPress={onChangeStage}
+          disabled={isChangingStage}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.btnText}>
+            {isChangingStage ? 'Đang xử lý...' : 'Chuyển giai đoạn'}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {showCancel && (
+        <TouchableOpacity
+          style={styles.btnCancelAction}
+          onPress={onCancel}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.btnText}>Hủy thí nghiệm</Text>
+        </TouchableOpacity>
+      )}
+    </ScrollView>
+  );
+};
+
+// =============================================================================
+// CHEMICALS & MATERIALS FOR CURRENT STAGE
+// =============================================================================
+
+interface ChemicalsAndMaterialsProps {
+  currentStage?: MethodStage;
+  currentStageName?: string;
+}
+
+const ChemicalsAndMaterials = ({ currentStage, currentStageName }: ChemicalsAndMaterialsProps) => {
+  const stageChemicals = currentStage?.stageChemicals ?? [];
+  const stageMaterials = currentStage?.stageMaterials ?? [];
+
+  const chemGroups = stageChemicals.reduce<Record<string, Chemical[]>>((acc, sc) => {
+    const cat = sc.chemical?.category ?? 'Khác';
+    if (!acc[cat]) acc[cat] = [];
+    if (sc.chemical) acc[cat].push(sc.chemical);
+    return acc;
+  }, {});
+
+  const matGroups = stageMaterials.reduce<Record<string, Material[]>>((acc, sm) => {
+    const cat = sm.material?.category ?? 'Khác';
+    if (!acc[cat]) acc[cat] = [];
+    if (sm.material) acc[cat].push(sm.material);
+    return acc;
+  }, {});
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>
+        Hóa chất & dụng cụ
+        {currentStageName ? (
+          <Text style={{ fontWeight: '600', fontSize: 13, opacity: 0.7 }}>
+            {' '}({currentStageName})
+          </Text>
+        ) : null}
+      </Text>
+
+      <View style={styles.card}>
+        {/* Chemicals */}
+        <Text style={styles.chemSectionTitle}>
+          Hóa chất ({stageChemicals.length})
+        </Text>
+        {stageChemicals.length === 0 ? (
+          <Text style={styles.chemEmpty}>Không có hóa chất</Text>
+        ) : (
+          Object.entries(chemGroups).map(([cat, chems]) => (
+            <View key={cat} style={styles.chemGroup}>
+              <Text style={styles.chemCategory}>{cat}</Text>
+              {chems.map((c, i) => (
+                <View key={c.id ?? `c-${i}`} style={styles.chemItem}>
+                  <View style={styles.chemDot} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.chemItemName}>{toText(c.name)}</Text>
+                    {c.concentrationUnit ? (
+                      <Text style={styles.chemItemUnit}>{c.concentrationUnit}</Text>
+                    ) : null}
+                  </View>
+                </View>
+              ))}
+            </View>
+          ))
+        )}
+
+        <View style={styles.stageDivider} />
+
+        {/* Materials */}
+        <Text style={[styles.chemSectionTitle, { marginTop: 12 }]}>
+          Dụng cụ ({stageMaterials.length})
+        </Text>
+        {stageMaterials.length === 0 ? (
+          <Text style={styles.chemEmpty}>Không có dụng cụ</Text>
+        ) : (
+          Object.entries(matGroups).map(([cat, mats]) => (
+            <View key={cat} style={styles.chemGroup}>
+              <Text style={styles.chemCategory}>{cat}</Text>
+              {mats.map((m, i) => (
+                <View key={m.id ?? `m-${i}`} style={styles.chemItem}>
+                  <View style={styles.chemDot} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.chemItemName}>{toText(m.name)}</Text>
+                    {m.unit ? (
+                      <Text style={styles.chemItemUnit}>{m.unit}</Text>
+                    ) : null}
+                  </View>
+                </View>
+              ))}
+            </View>
+          ))
+        )}
+      </View>
+    </View>
+  );
+};
+
+// =============================================================================
+// EXPERIMENT HEADER (updated with creator + expectedSampleCount)
+// =============================================================================
+
+const ExperimentHeader = ({
+  detail,
+  creator,
+}: {
+  detail: ExperimentLogDetail;
+  creator?: string;
+}) => (
   <View style={styles.section}>
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{toText(detail.name)}</Text>
       <StatusBadge status={detail.status} />
 
-      {/* <InfoRow label="Người phụ trách" value={detail.assignedTo} /> */}
       <InfoRow
         label="Thời gian"
-        value={`${formatDate(detail.startDate)} -> ${formatDate(detail.endDate)}`}
+        value={`${formatDate(detail.startDate)} → ${formatDate(detail.endDate)}`}
       />
       <InfoRow label="Lô nuôi cấy" value={detail.batchName} />
-      <InfoRow label="Phòng lab" value={detail.labRoomName} isLast />
+      <InfoRow label="Phòng lab" value={detail.labRoomName} />
+      {detail.expectedSampleCount != null ? (
+        <InfoRow label="Số mẫu mong muốn" value={detail.expectedSampleCount} />
+      ) : null}
+      <InfoRow label="Người tạo" value={creator ?? 'N/A'} isLast />
     </View>
   </View>
 );
+
+// =============================================================================
+// SEEDLING INFO (unchanged)
+// =============================================================================
 
 const SeedlingInfo = ({ detail }: { detail: ExperimentLogDetail }) => {
   const traits = detail.traits ?? [];
@@ -248,15 +728,26 @@ const SeedlingInfo = ({ detail }: { detail: ExperimentLogDetail }) => {
       <InfoRow label="Tên khoa học" value={detail.scientificName} italicValue />
       <InfoRow label="Mô tả" value={detail.description} />
       <InfoRow label="Parent A - Tên địa phương" value={detail.parentALocalName} />
-      <InfoRow label="Parent A - Tên khoa học" value={detail.parentAScientificName} italicValue isLast={traits.length === 0} />
+      <InfoRow
+        label="Parent A - Tên khoa học"
+        value={detail.parentAScientificName}
+        italicValue
+        isLast={traits.length === 0}
+      />
 
       {traits.length > 0 ? (
         <View>
           <Text style={styles.cardSubTitle}>Traits</Text>
           {traits.map((trait, index) => {
             const rowValue = `${toText(trait.value, '-')} ${toText(trait.unit, '')}`.trim();
-            const isLast = index === traits.length - 1;
-            return <InfoRow key={trait.id ?? `${index}`} label={toText(trait.name)} value={rowValue} isLast={isLast} />;
+            return (
+              <InfoRow
+                key={trait.id ?? `${index}`}
+                label={toText(trait.name)}
+                value={rowValue}
+                isLast={index === traits.length - 1}
+              />
+            );
           })}
         </View>
       ) : null}
@@ -264,24 +755,40 @@ const SeedlingInfo = ({ detail }: { detail: ExperimentLogDetail }) => {
   );
 };
 
-const MethodStages = ({ method, currentStageOrder }: { method?: ExperimentMethod; currentStageOrder?: number | null }) => {
-  const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
-  const stages = useMemo(() => (method?.methodStages ?? []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), [method?.methodStages]);
+// =============================================================================
+// METHOD STAGES (updated with isSampleGenerated tag)
+// =============================================================================
 
-  const toggleStage = (stageKey: string) => {
-    setExpandedMap((prev) => ({
-      ...prev,
-      [stageKey]: !prev[stageKey],
-    }));
-  };
+const MethodStages = ({
+  method,
+  currentStageOrder,
+}: {
+  method?: ExperimentMethod;
+  currentStageOrder?: number | null;
+}) => {
+  const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+  const stages = useMemo(
+    () => (method?.methodStages ?? []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [method?.methodStages],
+  );
+
+  const toggleStage = (stageKey: string) =>
+    setExpandedMap((prev) => ({ ...prev, [stageKey]: !prev[stageKey] }));
 
   return (
     <SectionCard title="Phương pháp & giai đoạn">
       <InfoRow label="Tên phương pháp" value={method?.name} />
       <InfoRow label="Mô tả" value={method?.description} />
-      <InfoRow label="Tổng thời lượng" value={`${toText(method?.totalDurationDays ?? 0)} ngày`} isLast={stages.length === 0} />
+      <InfoRow
+        label="Tổng thời lượng"
+        value={`${toText(method?.totalDurationDays ?? 0)} ngày`}
+        isLast={stages.length === 0}
+      />
 
-      {stages.length > 0 ? <Text style={styles.cardSubTitle}>Các giai đoạn</Text> : null}
+      {stages.length > 0 ? (
+        <Text style={styles.cardSubTitle}>Các giai đoạn</Text>
+      ) : null}
+
       {stages.map((stage, index) => {
         const stageKey = stage.id ?? `${stage.order ?? index + 1}`;
         const stageOrder = stage.order ?? index + 1;
@@ -289,6 +796,7 @@ const MethodStages = ({ method, currentStageOrder }: { method?: ExperimentMethod
         const isPastStage = currentStageOrder != null && stageOrder < currentStageOrder;
         const isUpcomingStage = currentStageOrder != null && stageOrder > currentStageOrder;
         const expanded = !!expandedMap[stageKey];
+        const duration = stage.durationsDays ?? stage.durationDays ?? 0;
 
         return (
           <View
@@ -300,30 +808,65 @@ const MethodStages = ({ method, currentStageOrder }: { method?: ExperimentMethod
               isUpcomingStage && styles.stageCardUpcoming,
             ]}
           >
+            {/* Stage header row */}
             <View style={styles.stageTop}>
               <View style={styles.stageOrderBubble}>
-                <Text style={styles.stageOrderText}>{stageOrder}</Text>
+                <Text style={styles.stageOrderText}>
+                  {isPastStage ? '✓' : stageOrder}
+                </Text>
               </View>
 
               <View style={styles.stageTitleWrap}>
-                <Text style={styles.stageName}>{toText(stage.stageDefinition?.name)}</Text>
-                <Text style={styles.stageMeta}>Thời lượng: {toText(stage.durationDays ?? 0)} ngày</Text>
+                <Text style={styles.stageName}>
+                  {toText(stage.stageDefinition?.name)}
+                </Text>
+                <Text style={styles.stageMeta}>
+                  Thời lượng: {toText(duration)} ngày
+                </Text>
               </View>
 
-              {isCurrentStage ? <View style={styles.stageCurrentPill}><Text style={styles.stageCurrentPillText}>Đang thực hiện</Text></View> : null}
+              {isCurrentStage ? (
+                <View style={styles.stageCurrentPill}>
+                  <Text style={styles.stageCurrentPillText}>Đang thực hiện</Text>
+                </View>
+              ) : null}
             </View>
 
-            <TouchableOpacity style={styles.expandAction} onPress={() => toggleStage(stageKey)} activeOpacity={0.85}>
-              <Text style={styles.expandActionText}>{expanded ? 'Thu gọn' : 'Xem chi tiết'}</Text>
+            {/* isSampleGenerated tag */}
+            <View style={styles.stageTagRow}>
+              <View
+                style={[
+                  styles.isSampleTag,
+                  stage.isSampleGenerated
+                    ? styles.isSampleTagEnabled
+                    : styles.isSampleTagDisabled,
+                ]}
+              >
+                <Text style={styles.isSampleTagText}>
+                  {stage.isSampleGenerated ? 'Sinh chồi' : 'Không sinh chồi'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Expand toggle */}
+            <TouchableOpacity
+              style={styles.expandAction}
+              onPress={() => toggleStage(stageKey)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.expandActionText}>
+                {expanded ? 'Thu gọn' : 'Xem chi tiết'}
+              </Text>
             </TouchableOpacity>
 
+            {/* Expanded detail */}
             {expanded ? (
               <View style={styles.stageDivider}>
                 <Text style={styles.systemTitle}>Materials</Text>
                 {(stage.materials ?? []).length > 0 ? (
-                  (stage.materials ?? []).map((material, materialIndex) => (
-                    <Text key={material.id ?? `${stageKey}-m-${materialIndex}`} style={styles.systemLine}>
-                      - {toText(material.name)} ({toText(material.unit)})
+                  (stage.materials ?? []).map((mat, mi) => (
+                    <Text key={mat.id ?? `${stageKey}-m-${mi}`} style={styles.systemLine}>
+                      - {toText(mat.name)} ({toText(mat.unit)})
                     </Text>
                   ))
                 ) : (
@@ -332,9 +875,9 @@ const MethodStages = ({ method, currentStageOrder }: { method?: ExperimentMethod
 
                 <Text style={styles.systemTitle}>Chemicals</Text>
                 {(stage.chemicals ?? []).length > 0 ? (
-                  (stage.chemicals ?? []).map((chemical, chemicalIndex) => (
-                    <Text key={chemical.id ?? `${stageKey}-c-${chemicalIndex}`} style={styles.systemLine}>
-                      - {toText(chemical.name)} ({toText(chemical.concentrationUnit)})
+                  (stage.chemicals ?? []).map((chem, ci) => (
+                    <Text key={chem.id ?? `${stageKey}-c-${ci}`} style={styles.systemLine}>
+                      - {toText(chem.name)} ({toText(chem.concentrationUnit)})
                     </Text>
                   ))
                 ) : (
@@ -349,6 +892,10 @@ const MethodStages = ({ method, currentStageOrder }: { method?: ExperimentMethod
   );
 };
 
+// =============================================================================
+// SAMPLE LIST (unchanged)
+// =============================================================================
+
 interface SampleListProps {
   samples: SampleItem[];
   onPressSample?: (id: string) => void;
@@ -356,7 +903,7 @@ interface SampleListProps {
 
 const SampleList = ({ samples, onPressSample }: SampleListProps) => {
   const renderSampleItem = ({ item }: { item: SampleItem }) => {
-    const isActive = String(item.status || '').toLowerCase() === 'inprogress';
+    const isActive = normalizeStatus(item.status) === 'inprogress';
 
     return (
       <TouchableOpacity
@@ -369,9 +916,15 @@ const SampleList = ({ samples, onPressSample }: SampleListProps) => {
           <Text style={styles.sampleTitle}>{toText(item.name)}</Text>
           <StatusBadge status={item.status} />
         </View>
-        <Text style={styles.sampleMeta}>Giai đoạn hiện tại: {toText(item.currentSampleStage)}</Text>
-        <Text style={styles.sampleMeta}>Ngày thực hiện: {formatDate(item.executionDate)}</Text>
-        {item.notes ? <Text style={styles.sampleMeta}>Ghi chú: {item.notes}</Text> : null}
+        <Text style={styles.sampleMeta}>
+          Giai đoạn hiện tại: {toText(item.currentSampleStage)}
+        </Text>
+        <Text style={styles.sampleMeta}>
+          Ngày thực hiện: {formatDate(item.executionDate)}
+        </Text>
+        {item.notes ? (
+          <Text style={styles.sampleMeta}>Ghi chú: {item.notes}</Text>
+        ) : null}
       </TouchableOpacity>
     );
   };
@@ -395,23 +948,29 @@ const SampleList = ({ samples, onPressSample }: SampleListProps) => {
   );
 };
 
+// =============================================================================
+// RESULT SECTION (unchanged)
+// =============================================================================
+
 const ResultSection = ({ detail }: { detail: ExperimentLogDetail }) => (
   <SectionCard title="Kết quả & kết luận">
     <View>
-      <View>
-        <View style={styles.stageTop}>
-          <CheckCircle2 size={16} color="#1F3D2F" />
-          <Text style={styles.systemTitle}> Kết luận</Text>
-        </View>
-        <Text style={[styles.bodyText, styles.bodyTextSpacing]}>{toText(detail.conclusion)}</Text>
+      <View style={styles.stageTop}>
+        <CheckCircle2 size={16} color="#1F3D2F" />
+        <Text style={styles.systemTitle}> Kết luận</Text>
       </View>
+      <Text style={[styles.bodyText, styles.bodyTextSpacing]}>
+        {toText(detail.conclusion)}
+      </Text>
 
       <View style={styles.stageDivider}>
         <View style={styles.stageTop}>
           <AlertCircle size={16} color="#1F3D2F" />
           <Text style={styles.systemTitle}> Vấn đề phát sinh</Text>
         </View>
-        <Text style={[styles.bodyText, styles.bodyTextSpacing]}>{toText(detail.issues)}</Text>
+        <Text style={[styles.bodyText, styles.bodyTextSpacing]}>
+          {toText(detail.issues)}
+        </Text>
       </View>
 
       <View style={styles.stageDivider}>
@@ -419,26 +978,44 @@ const ResultSection = ({ detail }: { detail: ExperimentLogDetail }) => (
           <FileText size={16} color="#1F3D2F" />
           <Text style={styles.systemTitle}> Khuyến nghị</Text>
         </View>
-        <Text style={[styles.bodyText, styles.bodyTextSpacing]}>{toText(detail.recommendations)}</Text>
+        <Text style={[styles.bodyText, styles.bodyTextSpacing]}>
+          {toText(detail.recommendations)}
+        </Text>
       </View>
     </View>
   </SectionCard>
 );
+
+// =============================================================================
+// MAIN SCREEN
+// =============================================================================
 
 const ExperimentLogDetailScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const experimentLogId = route.params?.experimentLogId as string | undefined;
 
+  // ── Data state ─────────────────────────────────────────────
   const [detail, setDetail] = useState<ExperimentLogDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const [creator, setCreator] = useState('');
 
+  // ── Action state ────────────────────────────────────────────
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isChangingStage, setIsChangingStage] = useState(false);
+  const [isChangeStageSuccessModalOpen, setIsChangeStageSuccessModalOpen] = useState(false);
+  const [isProtocormModalOpen, setIsProtocormModalOpen] = useState(false);
+  const [isCreatingProtocorm, setIsCreatingProtocorm] = useState(false);
+
+  // ── Fetch detail ────────────────────────────────────────────
   const fetchDetail = useCallback(async () => {
     if (!experimentLogId) {
-      const message = 'Không tìm thấy experimentLogId để tải chi tiết nhật ký.';
-      setError(message);
+      const msg = 'Không tìm thấy experimentLogId để tải chi tiết nhật ký.';
+      setError(msg);
       setLoading(false);
       return;
     }
@@ -451,7 +1028,6 @@ const ExperimentLogDetailScreen = () => {
       if (!res.ok) {
         const messageText = await res.text();
         let parsedMessage = `Không thể tải chi tiết nhật ký (HTTP ${res.status})`;
-
         if (messageText) {
           try {
             const parsed = JSON.parse(messageText);
@@ -460,50 +1036,164 @@ const ExperimentLogDetailScreen = () => {
             parsedMessage = messageText;
           }
         }
-
         throw new Error(parsedMessage);
       }
 
       const raw = await res.text();
       const json = raw ? JSON.parse(raw) : {};
-      const normalized = normalizeExperimentLog(json);
-      setDetail(normalized);
+      setDetail(normalizeExperimentLog(json));
     } catch (e: any) {
-      const message = String(e?.message || 'Không thể kết nối tới máy chủ');
-      setError(message);
-      Alert.alert('Lỗi tải dữ liệu', message);
+      const msg = String(e?.message || 'Không thể kết nối tới máy chủ');
+      setError(msg);
+      Alert.alert('Lỗi tải dữ liệu', msg);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [experimentLogId]);
 
-  useEffect(() => {
-    fetchDetail();
-  }, [fetchDetail]);
+  useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
+  // ── Fetch creator name ──────────────────────────────────────
+  useEffect(() => {
+    const createdBy = detail?.createdBy;
+    if (!createdBy) return;
+
+    fetch(`${cleanBaseUrl}/api/user/${createdBy}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const userData = data?.value ?? data;
+        setCreator(userData?.name ?? '');
+      })
+      .catch(() => {});
+  }, [detail?.createdBy]);
+
+  // ── Actions ─────────────────────────────────────────────────
+
+  const handleStart = async () => {
+    if (!experimentLogId) return;
+    setIsUpdatingStatus(true);
+    try {
+      const res = await fetch(
+        `${cleanBaseUrl}/api/experiment-logs/${experimentLogId}/status`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'InProgress' }),
+        },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setDetail((prev) => (prev ? { ...prev, status: 'InProgress' } : prev));
+    } catch (e: any) {
+      const msg = String(e?.message || 'Không thể bắt đầu thí nghiệm');
+      Alert.alert('Lỗi', msg);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleCancel = async (reason: string) => {
+    if (!experimentLogId) return;
+    setIsCancelling(true);
+    try {
+      const res = await fetch(
+        `${cleanBaseUrl}/api/experiment-logs/${experimentLogId}/cancel`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: experimentLogId, reason }),
+        },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setDetail((prev) => (prev ? { ...prev, status: 'Failed' } : prev));
+      setIsCancelModalOpen(false);
+    } catch (e: any) {
+      const msg = String(e?.message || 'Không thể hủy thí nghiệm');
+      Alert.alert('Lỗi', msg);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const handleChangeStage = async () => {
+    if (!experimentLogId) return;
+    setIsChangingStage(true);
+    try {
+      const res = await fetch(
+        `${cleanBaseUrl}/api/experiment-logs/${experimentLogId}/status`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'WaitingForChangeStage' }),
+        },
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setDetail((prev) =>
+        prev ? { ...prev, status: 'WaitingForChangeStage' } : prev,
+      );
+      setIsChangeStageSuccessModalOpen(true);
+    } catch (e: any) {
+      const msg = String(e?.message || 'Không thể chuyển giai đoạn');
+      Alert.alert('Lỗi', msg);
+    } finally {
+      setIsChangingStage(false);
+    }
+  };
+
+  const handleCreateProtocorm = async (quantity: number) => {
+    if (!experimentLogId || quantity <= 0) return;
+    setIsCreatingProtocorm(true);
+    try {
+      const res = await fetch(`${cleanBaseUrl}/api/samples`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ experimentLogId, quantity }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      // Refetch to get updated samples list
+      const refreshRes = await fetch(
+        `${cleanBaseUrl}/api/experiment-logs/${experimentLogId}`,
+      );
+      if (refreshRes.ok) {
+        const raw = await refreshRes.text();
+        const json = raw ? JSON.parse(raw) : {};
+        setDetail(normalizeExperimentLog(json));
+      }
+      setIsProtocormModalOpen(false);
+    } catch (e: any) {
+      const msg = String(e?.message || 'Không thể tạo Protocorm');
+      Alert.alert('Lỗi', msg);
+    } finally {
+      setIsCreatingProtocorm(false);
+    }
+  };
+
+  // ── Navigation ──────────────────────────────────────────────
   const onRefresh = () => {
     setRefreshing(true);
     fetchDetail();
   };
 
   const handlePressSample = (sampleId: string) => {
-    navigation.navigate('SampleDetail', { sampleId });  
+    navigation.navigate('SampleDetail', { sampleId });
   };
 
+  // ── Error fallback ──────────────────────────────────────────
   const renderErrorFallback = () => (
     <View style={styles.center}>
       <View style={styles.errorCard}>
         <Text style={styles.errorTitle}>Không thể tải dữ liệu</Text>
         <Text style={styles.errorText}>{toText(error)}</Text>
-
         <View style={styles.errorActions}>
           <View style={styles.actionHalf}>
-            <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.goBack()}>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() => navigation.goBack()}
+            >
               <Text style={styles.secondaryButtonText}>Quay lại</Text>
             </TouchableOpacity>
           </View>
-
           <View style={styles.actionHalf}>
             <TouchableOpacity style={styles.primaryButton} onPress={fetchDetail}>
               <Text style={styles.primaryButtonText}>Thử lại</Text>
@@ -514,10 +1204,17 @@ const ExperimentLogDetailScreen = () => {
     </View>
   );
 
+  // ── Derived values ──────────────────────────────────────────
   const samples = detail?.samples ?? [];
+  const currentStage = detail?.method?.methodStages?.find(
+    (s) => s.order === detail?.currentStageOrder,
+  );
+  const currentStageName = currentStage?.stageDefinition?.name;
 
+  // ── Render ──────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
+      {/* Background */}
       <ImageBackground
         source={require('../../assets/images/background.jpg')}
         style={styles.bg}
@@ -529,14 +1226,54 @@ const ExperimentLogDetailScreen = () => {
         />
       </ImageBackground>
 
+      {/* Modals */}
+      <CancelModal
+        visible={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={handleCancel}
+        isLoading={isCancelling}
+      />
+      <ChangeStageSuccessModal
+        visible={isChangeStageSuccessModalOpen}
+        onClose={() => setIsChangeStageSuccessModalOpen(false)}
+      />
+      <CreateProtocormModal
+        visible={isProtocormModalOpen}
+        onClose={() => setIsProtocormModalOpen(false)}
+        onConfirm={handleCreateProtocorm}
+        isLoading={isCreatingProtocorm}
+        expectedSampleCount={detail?.expectedSampleCount}
+        currentSampleCount={samples.length}
+      />
+
+      {/* Page header */}
       <View style={styles.headerWrap}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.85}
+        >
           <ArrowLeft size={18} color="#1F3D2F" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chi tiết nhật ký</Text>
         <View style={{ width: 36 }} pointerEvents="none" />
       </View>
 
+      {/* Action buttons bar (visible only when data is loaded) */}
+      {!loading && detail ? (
+        <ActionButtons
+          detail={detail}
+          samples={samples}
+          onStart={async () => { await handleStart(); }}
+          onCancel={() => setIsCancelModalOpen(true)}
+          onChangeStage={async () => { await handleChangeStage(); }}
+          onCreateProtocorm={() => setIsProtocormModalOpen(true)}
+          isUpdatingStatus={isUpdatingStatus}
+          isChangingStage={isChangingStage}
+        />
+      ) : null}
+
+      {/* Main content */}
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#1F3D2F" />
@@ -546,29 +1283,56 @@ const ExperimentLogDetailScreen = () => {
       ) : (
         <ScrollView
           contentContainerStyle={styles.content}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1F3D2F" />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#1F3D2F"
+            />
+          }
           showsVerticalScrollIndicator={false}
         >
-          <ExperimentHeader detail={detail ?? {}} />
+          <ExperimentHeader detail={detail ?? {}} creator={creator} />
 
           <SectionCard title="Mục tiêu & ghi chú">
             <Text style={styles.bodyText}>{toText(detail?.objective)}</Text>
-            <Text style={[styles.bodyText, styles.bodyTextSpacing]}>{toText(detail?.notes)}</Text>
-            {detail?.reason ? <Text style={[styles.bodyText, styles.bodyTextSpacing]}>Lý do: {detail.reason}</Text> : null}
+            <Text style={[styles.bodyText, styles.bodyTextSpacing]}>
+              {toText(detail?.notes)}
+            </Text>
+            {detail?.reason ? (
+              <Text style={[styles.bodyText, styles.bodyTextSpacing]}>
+                Lý do: {detail.reason}
+              </Text>
+            ) : null}
           </SectionCard>
 
           <SeedlingInfo detail={detail ?? {}} />
 
-          <MethodStages method={detail?.method} currentStageOrder={detail?.currentStageOrder ?? null} />
+          <MethodStages
+            method={detail?.method}
+            currentStageOrder={detail?.currentStageOrder ?? null}
+          />
+
+          {/* NEW: Chemicals & Materials for current stage */}
+          <ChemicalsAndMaterials
+            currentStage={currentStage}
+            currentStageName={currentStageName}
+          />
 
           <SectionCard title="Thông tin lô nuôi cấy">
             <InfoRow label="Tên lô" value={detail?.batchName} />
             <InfoRow label="Phòng lab" value={detail?.labRoomName} />
             <InfoRow
               label="Kích thước"
-              value={`${toText(detail?.batchSize?.width ?? 0)} x ${toText(detail?.batchSize?.height ?? 0)} ${toText(detail?.batchSize?.unit, '')}`.trim()}
+              value={`${toText(detail?.batchSize?.width ?? 0)} x ${toText(
+                detail?.batchSize?.height ?? 0,
+              )} ${toText(detail?.batchSize?.unit, '')}`.trim()}
             />
-            <InfoRow label="Trạng thái lô" value={translateStatusVi(detail?.batchStatus)} isLast />
+            <InfoRow
+              label="Trạng thái lô"
+              value={translateStatusVi(detail?.batchStatus)}
+              isLast
+            />
           </SectionCard>
 
           <SampleList samples={samples} onPressSample={handlePressSample} />
