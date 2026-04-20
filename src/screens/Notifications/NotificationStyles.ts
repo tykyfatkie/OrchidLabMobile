@@ -6,55 +6,86 @@ export const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
 
-  // Header
+  // ── Header ──────────────────────────────────────────
   header: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 16,
+    paddingBottom: 14,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 0.5,
     borderBottomColor: '#F1F5F9',
   },
   backButton: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerCenter: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 2,
-  },
-  backArrow: {
-    fontSize: 22,
-    color: '#15803D',
-    fontWeight: '400',
-    lineHeight: 24,
-    marginTop: -1,
-  },
-  backText: {
-    fontSize: 14,
-    color: '#15803D',
-    fontWeight: '500',
-  },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
+    gap: 8,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#111827',
   },
   unreadBadge: {
+    backgroundColor: '#22C55E',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  unreadBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
+  // ── Filter Tabs ─────────────────────────────────────
+  filterContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#F1F5F9',
+  },
+  filterScroll: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+  },
+  filterTabActive: {
+    backgroundColor: '#111827',
+  },
+  filterTabText: {
     fontSize: 13,
-    color: '#15803D',
     fontWeight: '500',
+    color: '#6B7280',
+  },
+  filterTabTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 
-  // List
+  // ── List ────────────────────────────────────────────
   listContent: {
-    paddingBottom: 32,
+    paddingBottom: 40,
   },
 
-  // Section Header
+  // ── Section Header ──────────────────────────────────
   sectionHeader: {
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -62,60 +93,99 @@ export const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   sectionHeaderText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#9CA3AF',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#374151',
+    letterSpacing: 0.2,
   },
 
-  // Notification Item
+  // ── Notification Item ────────────────────────────────
   itemRow: {
     flexDirection: 'row',
-    alignItems: 'stretch',
-    backgroundColor: '#FFFFFF',
-    paddingLeft: 20,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#F1F5F9',
-  },
-  unreadBar: {
-    width: 3,
-    backgroundColor: '#22C55E',
-    borderRadius: 2,
-    marginRight: 14,
-    marginVertical: 14,
-  },
-  unreadBarHidden: {
-    backgroundColor: 'transparent',
-  },
-  itemContent: {
-    flex: 1,
+    alignItems: 'flex-start',
     paddingVertical: 14,
     paddingRight: 20,
+    backgroundColor: '#FFFFFF',      // đã đọc: nền trắng thuần
   },
-  itemContentRead: {
-    opacity: 0.55,
+  itemRowUnread: {
+    backgroundColor: '#F0FDF4',      // chưa đọc: nền xanh lá nhạt rõ ràng
+  },
+
+  // Dot indicator
+  dotWrapper: {
+    width: 24,
+    alignItems: 'center',
+    paddingTop: 2,
+    flexShrink: 0,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22C55E',
+  },
+
+  // Icon
+  iconWrapper: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    flexShrink: 0,
+  },
+
+  // Content
+  itemContent: {
+    flex: 1,
+  },
+  itemTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 4,
   },
   itemTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',           // chưa đọc: đậm
     color: '#111827',
     lineHeight: 20,
-    marginBottom: 4,
+    flex: 1,
   },
-  itemBody: {
-    fontSize: 13,
-    color: '#6B7280',
-    lineHeight: 19,
-    marginBottom: 6,
+  itemTitleRead: {
+    fontWeight: '400',           // đã đọc: mảnh hơn
+    color: '#6B7280',            // đã đọc: xám nhạt hơn
   },
   itemDate: {
     fontSize: 11,
     color: '#9CA3AF',
-    fontWeight: '500',
+    flexShrink: 0,
+    marginTop: 2,
+  },
+  itemDateUnread: {
+    color: '#16A34A',            // chưa đọc: giờ màu xanh
+    fontWeight: '600',
+  },
+  itemBody: {
+    fontSize: 13,
+    color: '#374151',            // chưa đọc: tối hơn
+    lineHeight: 19,
+  },
+  itemBodyRead: {
+    color: '#9CA3AF',            // đã đọc: xám nhạt
   },
 
-  // Misc
+  // ── Divider ─────────────────────────────────────────
+  divider: {
+    height: 0.5,
+    backgroundColor: '#E5E7EB',
+    marginLeft: 82,
+    marginRight: 20,
+  },
+
+  // ── Misc ────────────────────────────────────────────
   loader: {
     marginVertical: 20,
   },
