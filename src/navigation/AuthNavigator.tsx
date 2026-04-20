@@ -13,6 +13,7 @@ import BatchDetailScreen from '../screens/Batches/BatchDetailScreen';
 import TasksScreen from '../screens/Tasks/TasksScreen';
 import TaskDetailScreen from '../screens/Tasks/TaskDetailScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
+import NotificationScreen from '../screens/Notifications/NotificationScreen.tsx';
 
 const Stack = createNativeStackNavigator();
 
@@ -25,7 +26,7 @@ export const AuthNavigator = () => {
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="TechnicianReports" component={ReportsScreen} />
+      <Stack.Screen name="Reports" component={ReportsScreen} />
       <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
       <Stack.Screen name="CreateReport" component={CreateReportScreen} />
       <Stack.Screen name="ExperimentLog" component={ExperimentLogScreen} />
@@ -37,6 +38,7 @@ export const AuthNavigator = () => {
       <Stack.Screen name="Tasks" component={TasksScreen} />
       <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="Notification" component={NotificationScreen} />
     </Stack.Navigator>
   );
 };

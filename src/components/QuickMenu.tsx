@@ -7,7 +7,7 @@ import Animated, {
   useSharedValue, 
   Easing 
 } from 'react-native-reanimated';
-import { User, LogOut, Settings } from 'lucide-react-native';
+import { User, LogOut, Settings, Bell } from 'lucide-react-native'; 
 import { useNavigation } from '@react-navigation/native';
 
 export const QuickMenu = () => {
@@ -19,8 +19,6 @@ export const QuickMenu = () => {
 
   const toggleMenu = () => {
     const toValue = expanded ? 0 : 1;
-    // Tạm biệt withSpring, dùng withTiming 150ms cho tốc độ "bàn thờ"
-    // Easing.out giúp nó bung ra nhanh ở đầu và mượt ở cuối
     animValue.value = withTiming(toValue, { 
       duration: 300,
       easing: Easing.out(Easing.quad) 
@@ -31,12 +29,9 @@ export const QuickMenu = () => {
   const menuStyle = useAnimatedStyle(() => {
     return {
       transform: [
-        // Scale từ 0.8 lên 1: Khi đóng sẽ có cảm giác "Zoom out" nhẹ cực sang
         { scale: 0.8 + (animValue.value * 0.2) }, 
-        // Trượt nhẹ lên trên một chút khi đóng
         { translateY: -10 * (1 - animValue.value) } 
       ],
-      // Fade mượt mà theo animValue
       opacity: animValue.value,
     };
   });
@@ -47,7 +42,19 @@ export const QuickMenu = () => {
 
   return (
     <View style={styles.container}>
-      {/* Nút chính */}
+      
+      {/* 🔔 NÚT THÔNG BÁO (Nằm ngay trên nút QuickMenu) */}
+      <TouchableOpacity 
+        activeOpacity={0.9} 
+        onPress={() => navigation.navigate('Notification')}
+        style={[styles.mainButton, { backgroundColor: '#FFFFFF', marginBottom: 12 }]}
+      >
+        <Bell size={20} color="#1F3D2F" />
+        {/* Chấm đỏ báo hiệu có thông báo mới (Tùy chọn) */}
+        <View style={styles.badge} />
+      </TouchableOpacity>
+
+      {/* ⚙️ NÚT CHÍNH (QuickMenu) */}
       <TouchableOpacity 
         activeOpacity={0.9} 
         onPress={toggleMenu} 
@@ -79,4 +86,17 @@ const styles = StyleSheet.create({
   expandedMenu: { backgroundColor: '#FFFFFF', borderRadius: 20, marginTop: 10, padding: 6, width: 130, elevation: 10, shadowColor: '#1F3D2F', shadowOpacity: 0.15, shadowRadius: 15, borderWidth: 1, borderColor: '#E0E8E0' },
   subButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#F0F4F0' },
   subText: { marginLeft: 8, fontSize: 13, fontWeight: '700', color: '#1F3D2F' },
+  
+  // Style cho chấm đỏ thông báo
+  badge: {
+    position: 'absolute',
+    top: 10,
+    right: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF5252',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF'
+  }
 });

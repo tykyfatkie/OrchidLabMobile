@@ -88,7 +88,7 @@ const NewestBanner = () => (
 );
 
 // ── Main Screen ──────────────────────────────────────────────
-const TechnicianReportsScreen = () => {
+const ReportsScreen = () => {
   const navigation = useNavigation<any>();
 
   const [data, setData] = useState<any[]>([]);
@@ -366,4 +366,4 @@ const TechnicianReportsScreen = () => {
   );
 };
 
-export default TechnicianReportsScreen;
+export default ReportsScreen;

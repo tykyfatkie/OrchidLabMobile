@@ -260,7 +260,7 @@ const BatchesScreen = () => {
 
       <QuickMenu />
       <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>Lô Nuôi</Text>
+        <Text style={styles.headerTitle}>Lô Nuôi Cấy</Text>
       </View>
 
       {loading ? (

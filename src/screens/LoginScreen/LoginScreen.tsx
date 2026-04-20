@@ -123,7 +123,7 @@ const LoginScreen: React.FC = () => {
           email: data.email || decoded?.email || email,
           roleName: data.roleName || decoded?.role || 'Nhân viên',
         }, token || null);
-        navigation.replace('TechnicianReports');
+        navigation.replace('Reports');
       } else {
         Alert.alert('Lỗi', data?.detail || 'Thông tin không chính xác');
       }

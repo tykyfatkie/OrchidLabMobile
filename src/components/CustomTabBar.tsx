@@ -7,7 +7,7 @@ import { styles } from '../styles/styles';
 const TABS = [
   { id: 'tasks', label: 'Công việc', icon: ClipboardList, route: 'Tasks' },
   { id: 'logs', label: 'Nhật ký TN', icon: BookOpen, route: 'ExperimentLog' },
-  { id: 'reports', label: 'Báo cáo', icon: FileText, route: 'TechnicianReports' },
+  { id: 'reports', label: 'Báo cáo', icon: FileText, route: 'Reports' },
   { id: 'batches', label: 'Lô nuôi cấy', icon: Sprout, route: 'Batches' },
   { id: 'samples', label: 'Mẫu', icon: TestTube, route: 'Samples' }, 
 ];
