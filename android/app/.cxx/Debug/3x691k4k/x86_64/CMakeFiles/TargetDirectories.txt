@@ -28,3 +28,6 @@ D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/x86_64/rnsvg_autol
 D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/x86_64/rnworklets_autolinked_build/CMakeFiles/react_codegen_rnworklets.dir
 D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/x86_64/rnworklets_autolinked_build/CMakeFiles/edit_cache.dir
 D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/x86_64/rnworklets_autolinked_build/CMakeFiles/rebuild_cache.dir
+D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/x86_64/RNWorkletsSpec_autolinked_build/CMakeFiles/react_codegen_RNWorkletsSpec.dir
+D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/x86_64/RNWorkletsSpec_autolinked_build/CMakeFiles/edit_cache.dir
+D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/x86_64/RNWorkletsSpec_autolinked_build/CMakeFiles/rebuild_cache.dir

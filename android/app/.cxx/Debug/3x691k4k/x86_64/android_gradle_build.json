@@ -8,6 +8,7 @@
     "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native-safe-area-context\\android\\src\\main\\jni\\CMakeLists.txt",
     "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native-screens\\android\\src\\main\\jni\\CMakeLists.txt",
     "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native-svg\\android\\src\\main\\jni\\CMakeLists.txt",
+    "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native-worklets-core\\android\\build\\generated\\source\\codegen\\jni\\CMakeLists.txt",
     "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native-worklets\\android\\build\\generated\\source\\codegen\\jni\\CMakeLists.txt",
     "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native\\ReactAndroid\\cmake-utils\\default-app-setup\\CMakeLists.txt"
   ],
@@ -44,6 +45,11 @@
       "toolchain": "toolchain",
       "abi": "x86_64",
       "artifactName": "react_codegen_RNImagePickerSpec"
+    },
+    "react_codegen_RNWorkletsSpec::@c787b30dd2b0f948dced": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "react_codegen_RNWorkletsSpec"
     },
     "react_codegen_rnasyncstorage::@1596841e19ec5b9eeffe": {
       "toolchain": "toolchain",

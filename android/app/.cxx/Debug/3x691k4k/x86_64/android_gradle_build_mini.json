@@ -8,6 +8,7 @@
     "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native-safe-area-context\\android\\src\\main\\jni\\CMakeLists.txt",
     "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native-screens\\android\\src\\main\\jni\\CMakeLists.txt",
     "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native-svg\\android\\src\\main\\jni\\CMakeLists.txt",
+    "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native-worklets-core\\android\\build\\generated\\source\\codegen\\jni\\CMakeLists.txt",
     "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native-worklets\\android\\build\\generated\\source\\codegen\\jni\\CMakeLists.txt",
     "D:\\FPT\\SEP490\\OrchidLabMobile\\node_modules\\react-native\\ReactAndroid\\cmake-utils\\default-app-setup\\CMakeLists.txt"
   ],
@@ -43,6 +44,11 @@
     },
     "react_codegen_rnblurview::@9a34ffec6e39b5c9049e": {
       "artifactName": "react_codegen_rnblurview",
+      "abi": "x86_64",
+      "runtimeFiles": []
+    },
+    "react_codegen_RNWorkletsSpec::@c787b30dd2b0f948dced": {
+      "artifactName": "react_codegen_RNWorkletsSpec",
       "abi": "x86_64",
       "runtimeFiles": []
     },

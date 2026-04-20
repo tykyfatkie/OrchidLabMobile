@@ -34,3 +34,9 @@ D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86_64\rnworklets_
 D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86_64\rnworklets_autolinked_build\CMakeFiles\react_codegen_rnworklets.dir\react\renderer\components\rnworklets\ShadowNodes.cpp.o
 D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86_64\rnworklets_autolinked_build\CMakeFiles\react_codegen_rnworklets.dir\react\renderer\components\rnworklets\States.cpp.o
 D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86_64\rnworklets_autolinked_build\CMakeFiles\react_codegen_rnworklets.dir\rnworklets-generated.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86_64\RNWorkletsSpec_autolinked_build\CMakeFiles\react_codegen_RNWorkletsSpec.dir\RNWorkletsSpec-generated.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86_64\RNWorkletsSpec_autolinked_build\CMakeFiles\react_codegen_RNWorkletsSpec.dir\react\renderer\components\RNWorkletsSpec\ComponentDescriptors.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86_64\RNWorkletsSpec_autolinked_build\CMakeFiles\react_codegen_RNWorkletsSpec.dir\react\renderer\components\RNWorkletsSpec\EventEmitters.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86_64\RNWorkletsSpec_autolinked_build\CMakeFiles\react_codegen_RNWorkletsSpec.dir\react\renderer\components\RNWorkletsSpec\Props.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86_64\RNWorkletsSpec_autolinked_build\CMakeFiles\react_codegen_RNWorkletsSpec.dir\react\renderer\components\RNWorkletsSpec\ShadowNodes.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86_64\RNWorkletsSpec_autolinked_build\CMakeFiles\react_codegen_RNWorkletsSpec.dir\react\renderer\components\RNWorkletsSpec\States.cpp.o

@@ -1,19 +1,4 @@
 {
-  "expo": {
-    "name": "OrchidLabMobile",
-    "displayName": "OrchidLabMobile",
-    "slug": "orchidlab-management-system",
-    "owner": "phatnguyentangtais-organization",
-    "plugins": [
-      ["expo-notifications", {
-        "icon": "./assets/notification-icon.png",
-        "color": "#22C55E"
-      }]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "b7a33dab-778f-4399-9224-294ebf1cb359"
-      }
-    }
-  }
+  "name": "OrchidLabMobile",
+  "displayName": "OrchidLabMobile"
 }

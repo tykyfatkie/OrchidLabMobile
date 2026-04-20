@@ -53,6 +53,7 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/armeabi-v7a/rnscreens_autolinked_build/cmake_install.cmake")
   include("D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/armeabi-v7a/rnsvg_autolinked_build/cmake_install.cmake")
   include("D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/armeabi-v7a/rnworklets_autolinked_build/cmake_install.cmake")
+  include("D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/armeabi-v7a/RNWorkletsSpec_autolinked_build/cmake_install.cmake")
 
 endif()
 

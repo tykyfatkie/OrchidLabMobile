@@ -270,6 +270,30 @@ if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   file(TOUCH_NOCREATE "D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/x86_64/CMakeFiles/cmake.verify_globs")
 endif()
 
+# react_codegen_SRCS at D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets-core/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets-core/android/build/generated/source/codegen/jni/*.cpp")
+set(OLD_GLOB
+  "D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets-core/android/build/generated/source/codegen/jni/RNWorkletsSpec-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/x86_64/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets-core/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets-core/android/build/generated/source/codegen/jni/react/renderer/components/RNWorkletsSpec/*.cpp")
+set(OLD_GLOB
+  "D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets-core/android/build/generated/source/codegen/jni/react/renderer/components/RNWorkletsSpec/ComponentDescriptors.cpp"
+  "D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets-core/android/build/generated/source/codegen/jni/react/renderer/components/RNWorkletsSpec/EventEmitters.cpp"
+  "D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets-core/android/build/generated/source/codegen/jni/react/renderer/components/RNWorkletsSpec/Props.cpp"
+  "D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets-core/android/build/generated/source/codegen/jni/react/renderer/components/RNWorkletsSpec/ShadowNodes.cpp"
+  "D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets-core/android/build/generated/source/codegen/jni/react/renderer/components/RNWorkletsSpec/States.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/x86_64/CMakeFiles/cmake.verify_globs")
+endif()
+
 # react_codegen_SRCS at D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
 file(GLOB NEW_GLOB LIST_DIRECTORIES true "D:/FPT/SEP490/OrchidLabMobile/node_modules/react-native-worklets/android/build/generated/source/codegen/jni/*.cpp")
 set(OLD_GLOB
