@@ -19,7 +19,7 @@ import { Asset, launchCamera, launchImageLibrary } from 'react-native-image-pick
 import { API_URL } from '@env';
 
 import { CustomTabBar } from '../../components/CustomTabBar';
-import { taskDetailStyles as styles } from './taskDetailStyles';
+import { taskDetailStyles as styles } from './TaskDetailStyles';
 import { translateChecklistStatusVi, translateTaskStatusVi } from '../../utils/statusTranslations';
 import { useAuth } from '../../context/AuthContext';
 
