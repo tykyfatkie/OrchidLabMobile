@@ -1,97 +1,90 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+🌿 OrchidLab Mobile - Hệ thống Quản lý Phòng Thí Nghiệm Hoa Lan
+📖 Giới thiệu Dự án
+OrchidLab Mobile là ứng dụng di động nằm trong hệ sinh thái Orchid Research & Lab Management System. Ứng dụng được thiết kế chuyên biệt để hỗ trợ các Nhà nghiên cứu (Researcher) và Kỹ thuật viên (Technician) thực hiện các nghiệp vụ ngay tại hiện trường phòng thí nghiệm và khu vực nhà kính.
 
-# Getting Started
+Điểm đột phá của ứng dụng là việc tích hợp sức mạnh của Trí tuệ Nhân tạo (YOLOv8), giúp phân tích và nhận diện bệnh hại trên hoa lan thông qua camera điện thoại một cách nhanh chóng và chính xác ngay tại thời gian thực.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+✨ Tính năng Nổi bật (Core Features)
+🔐 Xác thực & Phân quyền: Đăng nhập an toàn, điều hướng thông minh dựa trên vai trò (Admin, Researcher, Technician).
 
-## Step 1: Start Metro
+📸 AI Nhận diện Bệnh hại (YOLOv8): Chụp ảnh lá/cây hoa lan trực tiếp từ app, gửi lên server để AI phân tích và trả về kết quả bệnh kèm mức độ tin cậy.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+🧪 Quản lý Lô cấy mô & Cây giống: Theo dõi tình trạng phát triển, thông số và lịch sử chăm sóc của từng lô cấy mô.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+📝 Nhật ký Thí nghiệm (Experiment Logs): Ghi chép dữ liệu đo đạc, upload hình ảnh quá trình thí nghiệm ngay tại phòng Lab mà không cần mở laptop.
 
-```sh
-# Using npm
-npm start
+📋 Quản lý Công việc (Task Management): Giao việc, nhận việc và cập nhật tiến độ công việc theo thời gian thực giữa Researcher và Technician.
 
-# OR using Yarn
-yarn start
-```
+🔔 Thông báo Push (Notifee): Nhận cảnh báo tức thời từ hệ thống (kết quả AI, task mới, nhắc nhở) với hiệu ứng Pop-up native mượt mà.
 
-## Step 2: Build and run your app
+🛠️ Công nghệ Sử dụng (Tech Stack)
+Dự án được xây dựng trên kiến trúc React Native CLI thuần (Bare Workflow), không phụ thuộc vào Expo, nhằm tối ưu hiệu năng và khả năng can thiệp sâu vào Native C++/Java cho các tác vụ Camera và AI.
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+Frontend (Mobile App):
 
-### Android
+Core: React Native (v0.85.1) & TypeScript
 
-```sh
-# Using npm
-npm run android
+State Management: Zustand (Quản lý global state siêu nhẹ)
 
-# OR using Yarn
-yarn android
-```
+Navigation: React Navigation v7 (Native Stack & Bottom Tabs)
 
-### iOS
+Network/API: Axios (Custom Instance tự động đính kèm Bearer Token)
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+UI & Animations: React Native Reanimated v4, Lucide React Native (Icons)
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+Native Modules: @notifee/react-native (Thông báo), react-native-image-picker (Camera)
 
-```sh
-bundle install
-```
+Backend & Hệ sinh thái (Tích hợp):
 
-Then, and every time you update your native dependencies, run:
+API Server: C# ASP.NET Core & Python Flask
 
-```sh
-bundle exec pod install
-```
+Database: PostgreSQL
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+Cloud & Storage: Digital Ocean Droplet, Cloudinary
 
-```sh
-# Using npm
-npm run ios
+🚀 Hướng dẫn Cài đặt & Chạy Dự án
 
-# OR using Yarn
-yarn ios
-```
+1. Yêu cầu hệ thống (Prerequisites)
+   Node.js: Phiên bản >= 22.11.0
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+Java Development Kit (JDK): JDK 17 (Microsoft OpenJDK hoặc Eclipse Temurin)
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+Môi trường Android: Android SDK hoặc giả lập LDPlayer/NoxPlayer.
 
-## Step 3: Modify your app
+2. Cài đặt mã nguồn
+   Clone dự án về máy tính và cài đặt các thư viện:
 
-Now that you have successfully run the app, let's make changes!
+Bash
+git clone https://github.com/your-org/orchid-lab-mobile.git
+cd orchid-lab-mobile
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+# Cài đặt thư viện (Sử dụng --legacy-peer-deps để tránh xung đột phiên bản)
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+npm install --legacy-peer-deps 3. Khởi chạy Ứng dụng (Android)
+Mở 2 cửa sổ Terminal độc lập trong VS Code:
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+Terminal 1: Chạy máy chủ Metro (Bundler)
 
-## Congratulations! :tada:
+Bash
+npx react-native start --reset-cache
+Terminal 2: Biên dịch và cài đặt APK lên máy ảo
 
-You've successfully run and modified your React Native App. :partying_face:
+Bash
 
-### Now what?
+# Dọn dẹp bộ nhớ đệm Gradle (Khuyên dùng cho lần build đầu tiên)
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+cd android && ./gradlew clean && cd ..
 
-# Troubleshooting
+# Tiến hành Build ứng dụng
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+npx react-native run-android
+📏 Quy chuẩn Code (Coding Conventions)
+Dự án tuân thủ nghiêm ngặt các quy tắc quản lý chất lượng (PMP):
 
-# Learn More
+Component Files: Sử dụng PascalCase (VD: LoginScreen.tsx).
 
-To learn more about React Native, take a look at the following resources:
+Các file thông thường (Services, Utils): Sử dụng kebab-case hoặc lowerCamelCase (VD: notification.service.ts, apiClient.ts).
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Tên Hàm & Biến: Sử dụng lowerCamelCase (VD: handleLogin, userData).
+
+Format: Giới hạn 80 ký tự/dòng. Bắt buộc dùng dấu ngoặc nhọn {} cho mọi cấu trúc điều khiển luồng (if, for).
