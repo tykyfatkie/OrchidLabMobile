@@ -41,7 +41,6 @@ export const STATUS_FILTERS = [
 
 export const METRIC_CARDS = {
   total:      { bg: COLORS.white,    iconColor: COLORS.primary, textColor: COLORS.primary },
-  template:   { bg: '#F3F4F6',       iconColor: COLORS.filterGray, textColor: COLORS.filterGray },
   inProgress: { bg: COLORS.amberBg,  iconColor: COLORS.amber,   textColor: COLORS.amber },
   done:       { bg: COLORS.greenBg,  iconColor: COLORS.green,   textColor: COLORS.green },
 };

@@ -129,7 +129,6 @@ const TasksScreen = () => {
   const metricsData = allData.length ? allData : data;
   const isFiltering = committedSearch || committedStatus;
 
-  const templateCount  = metricsData.filter(i => normalizeStatus(i.status) === 'template').length;
   const inProgressCount = metricsData.filter(i => normalizeStatus(i.status) === 'inprogress').length;
   const doneCount      = metricsData.filter(i => normalizeStatus(i.status) === 'done').length;
 
@@ -152,13 +151,6 @@ const TasksScreen = () => {
             {metricsData.length || totalCount}
           </Text>
           <Text style={s.metricLabel}>Tổng{'\n'}công việc</Text>
-        </View>
-        <View style={[s.metricCard, { backgroundColor: METRIC_CARDS.template.bg }]}>
-          <ListChecks size={20} color={METRIC_CARDS.template.iconColor} />
-          <Text style={[s.metricValue, { color: METRIC_CARDS.template.textColor }]}>
-            {templateCount}
-          </Text>
-          <Text style={s.metricLabel}>Công việc{'\n'}mẫu</Text>
         </View>
         <View style={[s.metricCard, { backgroundColor: METRIC_CARDS.inProgress.bg }]}>
           <Clock size={20} color={METRIC_CARDS.inProgress.iconColor} />

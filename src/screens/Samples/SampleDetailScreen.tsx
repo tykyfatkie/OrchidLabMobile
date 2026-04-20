@@ -99,7 +99,6 @@ interface DiseaseIncidentItem {
   reviewNote: string;
 }
 
-/** Full analysis response — matches the web AnalysisResponse shape */
 interface AnalysisResponse {
   stageName: string;
   disease: {
@@ -282,7 +281,6 @@ const getIncidentStatusStyle = (status?: string) => {
 const canReviewIncident = (status?: string) =>
   status === 'AIDetected' || status === 'UnderReview';
 
-/** Matches the web isHealthyAnalysis logic exactly */
 const computeIsHealthy = (result: AnalysisResponse): boolean => {
   const diseaseCode = (result.disease?.code ?? '').toLowerCase();
   const diseaseName = (result.disease?.name ?? '').toLowerCase();
@@ -323,7 +321,7 @@ const ANALYTIC_LABELS: { key: string; label: string }[] = [
 ];
 
 // ─────────────────────────────────────────────
-// Reusable sub-components (stateless)
+// Reusable sub-components
 // ─────────────────────────────────────────────
 
 interface InfoRowProps {
@@ -461,11 +459,6 @@ const ImageGallery = ({ images }: { images: { id: string; url: string; label: st
   </SectionCard>
 );
 
-// ─────────────────────────────────────────────
-// Analysis section (upload button + image preview only)
-// Full result now shown in AnalysisModal
-// ─────────────────────────────────────────────
-
 const AnalysisUploadSection = ({
   selectedImage,
   analyzing,
@@ -506,7 +499,6 @@ const DiseaseIncidentList = ({
   incidents: DiseaseIncidentItem[];
   filterStatus: string;
   onChangeFilter: (status: string) => void;
-  /** Opens the review modal instead of directly calling API */
   onOpenReview: (item: DiseaseIncidentItem) => void;
   updatingIncidentId: string;
 }) => {
@@ -559,14 +551,10 @@ const DiseaseIncidentList = ({
                   </Text>
                 </View>
               </View>
-
-              <Text style={styles.incidentMeta}>
-                AI confidence: {confidencePct}
-              </Text>
+              <Text style={styles.incidentMeta}>AI confidence: {confidencePct}</Text>
               <Text style={styles.incidentMeta}>
                 Ghi chú: {toText(item.reviewNote, 'Chưa có ghi chú')}
               </Text>
-
               {allowReview ? (
                 <View style={styles.incidentActions}>
                   <TouchableOpacity
@@ -590,7 +578,7 @@ const DiseaseIncidentList = ({
 };
 
 // ─────────────────────────────────────────────
-// Modal: Full AI Analysis Result
+// Modal: Full AI Analysis Result (no destroy)
 // ─────────────────────────────────────────────
 
 const AnalysisModal = ({
@@ -598,48 +586,19 @@ const AnalysisModal = ({
   analysisResult,
   isHealthy,
   onClose,
-  onDestroy,
-  isDestroying,
 }: {
   visible: boolean;
   analysisResult: AnalysisResponse | null;
   isHealthy: boolean;
   onClose: () => void;
-  onDestroy: (reason: string) => Promise<void>;
-  isDestroying: boolean;
 }) => {
-  const [showDestroyForm, setShowDestroyForm] = useState(false);
-  const [destroyReason, setDestroyReason] = useState('');
-
-  // Reset inner state each time modal opens
-  useEffect(() => {
-    if (visible) {
-      setShowDestroyForm(false);
-      setDestroyReason('');
-    }
-  }, [visible]);
-
   if (!analysisResult) return null;
 
   const stageName =
     STAGE_NAME_MAP[analysisResult.stageName] ?? analysisResult.stageName ?? 'N/A';
 
-  const handleConfirmDestroy = async () => {
-    const finalReason =
-      destroyReason.trim() ||
-      `Mẫu vật nhiễm ${analysisResult.disease?.name ?? 'bệnh không xác định'}`;
-    await onDestroy(finalReason);
-    setShowDestroyForm(false);
-    setDestroyReason('');
-  };
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={modalStyles.overlay}>
         <View style={modalStyles.sheet}>
           {/* Header */}
@@ -694,7 +653,6 @@ const AnalysisModal = ({
             <View style={modalStyles.analyticGrid}>
               {ANALYTIC_LABELS.map(({ key, label }) => {
                 const raw = analysisResult.analyticResult?.[key] ?? 0;
-                // API may return 0–1 or 0–100; normalise to 0–100
                 const pct = raw <= 1 ? raw * 100 : raw;
                 const isHighlight = key !== 'healthy' && pct >= 50;
                 return (
@@ -709,7 +667,6 @@ const AnalysisModal = ({
                     >
                       {pct.toFixed(1)}%
                     </Text>
-                    {/* Mini progress bar */}
                     <View style={modalStyles.barTrack}>
                       <View
                         style={[
@@ -730,63 +687,6 @@ const AnalysisModal = ({
                 );
               })}
             </View>
-
-            {/* Destroy section — only when disease detected */}
-            {!isHealthy && (
-              <View style={modalStyles.destroyBox}>
-                <Text style={modalStyles.destroyWarning}>
-                  Mẫu vật có dấu hiệu bệnh. Bạn có thể tiêu hủy mẫu vật này.
-                </Text>
-
-                {!showDestroyForm ? (
-                  <TouchableOpacity
-                    style={modalStyles.destroyBtn}
-                    activeOpacity={0.85}
-                    onPress={() => setShowDestroyForm(true)}
-                  >
-                    <Text style={modalStyles.destroyBtnText}>Tiêu hủy mẫu vật</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <>
-                    <Text style={modalStyles.destroyReasonLabel}>
-                      Lý do tiêu hủy (có thể để trống)
-                    </Text>
-                    <TextInput
-                      style={modalStyles.destroyInput}
-                      placeholder={`Mặc định: Mẫu vật nhiễm ${analysisResult.disease?.name ?? ''}`}
-                      placeholderTextColor="#9EB09F"
-                      value={destroyReason}
-                      onChangeText={setDestroyReason}
-                      multiline
-                      editable={!isDestroying}
-                    />
-                    <View style={modalStyles.destroyActions}>
-                      <TouchableOpacity
-                        style={[modalStyles.destroyActionBtn, { backgroundColor: '#E8EFE8', flex: 1 }]}
-                        onPress={() => {
-                          setShowDestroyForm(false);
-                          setDestroyReason('');
-                        }}
-                        disabled={isDestroying}
-                        activeOpacity={0.85}
-                      >
-                        <Text style={{ color: '#1F3D2F', fontWeight: '700', fontSize: 13 }}>Hủy</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[modalStyles.destroyActionBtn, { backgroundColor: '#A33D3D', flex: 1 }]}
-                        onPress={handleConfirmDestroy}
-                        disabled={isDestroying}
-                        activeOpacity={0.85}
-                      >
-                        <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>
-                          {isDestroying ? 'Đang xử lý...' : 'Xác nhận tiêu hủy'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                )}
-              </View>
-            )}
           </ScrollView>
 
           {/* Footer */}
@@ -850,7 +750,6 @@ const ReviewIncidentModal = ({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalCard}>
-          {/* Header */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text style={styles.modalTitle}>Xem xét sự cố bệnh</Text>
             <TouchableOpacity onPress={onClose} disabled={submitting} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -858,7 +757,6 @@ const ReviewIncidentModal = ({
             </TouchableOpacity>
           </View>
 
-          {/* Incident summary */}
           <View style={reviewModalStyles.summaryBox}>
             <Text style={reviewModalStyles.summaryText}>
               <Text style={{ fontWeight: '800' }}>Tên mẫu: </Text>
@@ -874,7 +772,6 @@ const ReviewIncidentModal = ({
             </Text>
           </View>
 
-          {/* Decision radio */}
           <Text style={reviewModalStyles.fieldLabel}>Quyết định xem xét</Text>
           <TouchableOpacity
             style={reviewModalStyles.radioRow}
@@ -897,7 +794,6 @@ const ReviewIncidentModal = ({
             <Text style={reviewModalStyles.radioLabel}>Loại bỏ — AI phát hiện nhầm</Text>
           </TouchableOpacity>
 
-          {/* Note */}
           <Text style={[reviewModalStyles.fieldLabel, { marginTop: 12 }]}>Ghi chú (tuỳ chọn)</Text>
           <TextInput
             style={[styles.input, { minHeight: 72, marginBottom: 4 }]}
@@ -915,7 +811,6 @@ const ReviewIncidentModal = ({
             </Text>
           )}
 
-          {/* Actions */}
           <View style={styles.modalActions}>
             <View style={styles.actionHalf}>
               <TouchableOpacity
@@ -970,21 +865,9 @@ const modalStyles = {
     borderBottomWidth: 1,
     borderBottomColor: '#ECF0EC',
   },
-  sheetTitle: {
-    fontSize: 17,
-    fontWeight: '900' as const,
-    color: '#1F3D2F',
-  },
-  closeBtn: {
-    fontSize: 18,
-    color: '#4F6658',
-    fontWeight: '700' as const,
-  },
-  sheetBody: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
+  sheetTitle: { fontSize: 17, fontWeight: '900' as const, color: '#1F3D2F' },
+  closeBtn: { fontSize: 18, color: '#4F6658', fontWeight: '700' as const },
+  sheetBody: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   sheetFooter: {
     paddingHorizontal: 20,
     paddingVertical: 14,
@@ -998,11 +881,7 @@ const modalStyles = {
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
-  closeFooterBtnText: {
-    fontSize: 14,
-    fontWeight: '700' as const,
-    color: '#1F3D2F',
-  },
+  closeFooterBtnText: { fontSize: 14, fontWeight: '700' as const, color: '#1F3D2F' },
   summaryRow: {
     flexDirection: 'row' as const,
     borderWidth: 1,
@@ -1012,10 +891,7 @@ const modalStyles = {
     overflow: 'hidden' as const,
     backgroundColor: '#F6FAF6',
   },
-  summaryCell: {
-    flex: 1,
-    padding: 12,
-  },
+  summaryCell: { flex: 1, padding: 12 },
   summaryLabel: {
     fontSize: 11,
     color: '#4F6658',
@@ -1024,11 +900,7 @@ const modalStyles = {
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },
-  summaryValue: {
-    fontSize: 14,
-    fontWeight: '800' as const,
-    color: '#1F3D2F',
-  },
+  summaryValue: { fontSize: 14, fontWeight: '800' as const, color: '#1F3D2F' },
   descBox: {
     borderRadius: 12,
     backgroundColor: '#F2F6F2',
@@ -1043,12 +915,7 @@ const modalStyles = {
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },
-  descText: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: '#1F3D2F',
-    fontWeight: '600' as const,
-  },
+  descText: { fontSize: 13, lineHeight: 19, color: '#1F3D2F', fontWeight: '600' as const },
   healthBadge: {
     alignSelf: 'flex-start' as const,
     borderRadius: 999,
@@ -1056,112 +923,21 @@ const modalStyles = {
     paddingVertical: 7,
     marginBottom: 16,
   },
-  healthBadgeGreen: {
-    backgroundColor: '#A3F7BF',
-  },
-  healthBadgeRed: {
-    backgroundColor: '#FFEAEA',
-  },
-  healthBadgeText: {
-    fontSize: 13,
-    fontWeight: '800' as const,
-    color: '#1F3D2F',
-  },
-  subTitle: {
-    fontSize: 14,
-    fontWeight: '800' as const,
-    color: '#1F3D2F',
-    marginBottom: 10,
-  },
-  analyticGrid: {
-    gap: 6,
-    marginBottom: 16,
-  },
+  healthBadgeGreen: { backgroundColor: '#A3F7BF' },
+  healthBadgeRed: { backgroundColor: '#FFEAEA' },
+  healthBadgeText: { fontSize: 13, fontWeight: '800' as const, color: '#1F3D2F' },
+  subTitle: { fontSize: 14, fontWeight: '800' as const, color: '#1F3D2F', marginBottom: 10 },
+  analyticGrid: { gap: 6, marginBottom: 16 },
   analyticItem: {
     backgroundColor: '#F6FAF6',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  analyticLabel: {
-    fontSize: 12,
-    color: '#4F6658',
-    fontWeight: '700' as const,
-    marginBottom: 2,
-  },
-  analyticPct: {
-    fontSize: 13,
-    fontWeight: '700' as const,
-    color: '#1F3D2F',
-    marginBottom: 4,
-  },
-  barTrack: {
-    height: 4,
-    backgroundColor: '#E8EFE8',
-    borderRadius: 2,
-    overflow: 'hidden' as const,
-  },
-  barFill: {
-    height: 4,
-    borderRadius: 2,
-  },
-  destroyBox: {
-    borderWidth: 1,
-    borderColor: '#F0C4C4',
-    backgroundColor: '#FFF6F6',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 8,
-  },
-  destroyWarning: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#7A2E2E',
-    fontWeight: '700' as const,
-    marginBottom: 10,
-  },
-  destroyBtn: {
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#A33D3D',
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  },
-  destroyBtnText: {
-    fontSize: 13,
-    fontWeight: '800' as const,
-    color: '#FFFFFF',
-  },
-  destroyReasonLabel: {
-    fontSize: 12,
-    color: '#4F6658',
-    fontWeight: '700' as const,
-    marginBottom: 6,
-  },
-  destroyInput: {
-    borderWidth: 1,
-    borderColor: '#E2EAE2',
-    borderRadius: 10,
-    backgroundColor: '#FAFCFA',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 13,
-    color: '#1F3D2F',
-    fontWeight: '600' as const,
-    minHeight: 72,
-    textAlignVertical: 'top' as const,
-    marginBottom: 8,
-  },
-  destroyActions: {
-    flexDirection: 'row' as const,
-    gap: 8,
-  },
-  destroyActionBtn: {
-    height: 38,
-    borderRadius: 10,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  },
+  analyticLabel: { fontSize: 12, color: '#4F6658', fontWeight: '700' as const, marginBottom: 2 },
+  analyticPct: { fontSize: 13, fontWeight: '700' as const, color: '#1F3D2F', marginBottom: 4 },
+  barTrack: { height: 4, backgroundColor: '#E8EFE8', borderRadius: 2, overflow: 'hidden' as const },
+  barFill: { height: 4, borderRadius: 2 },
 };
 
 const reviewModalStyles = {
@@ -1172,18 +948,8 @@ const reviewModalStyles = {
     marginBottom: 14,
     gap: 4,
   },
-  summaryText: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#1F3D2F',
-    fontWeight: '600' as const,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '800' as const,
-    color: '#1F3D2F',
-    marginBottom: 8,
-  },
+  summaryText: { fontSize: 13, lineHeight: 18, color: '#1F3D2F', fontWeight: '600' as const },
+  fieldLabel: { fontSize: 12, fontWeight: '800' as const, color: '#1F3D2F', marginBottom: 8 },
   radioRow: {
     flexDirection: 'row' as const,
     alignItems: 'flex-start' as const,
@@ -1200,22 +966,9 @@ const reviewModalStyles = {
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
-  radioOuterActive: {
-    borderColor: '#1F3D2F',
-  },
-  radioInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#1F3D2F',
-  },
-  radioLabel: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
-    color: '#1F3D2F',
-    fontWeight: '600' as const,
-  },
+  radioOuterActive: { borderColor: '#1F3D2F' },
+  radioInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#1F3D2F' },
+  radioLabel: { flex: 1, fontSize: 13, lineHeight: 18, color: '#1F3D2F', fontWeight: '600' as const },
 };
 
 // ─────────────────────────────────────────────
@@ -1240,7 +993,6 @@ const SampleDetailScreen = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
-  const [destroyingFromAnalysis, setDestroyingFromAnalysis] = useState(false);
 
   // Disease incidents
   const [incidentFilterStatus, setIncidentFilterStatus] = useState('');
@@ -1252,27 +1004,12 @@ const SampleDetailScreen = () => {
   const [reviewingIncident, setReviewingIncident] = useState<DiseaseIncidentItem | null>(null);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
-  // Destroy sample modal (manual, by condition)
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [deleteReason, setDeleteReason] = useState('');
-  const [deleting, setDeleting] = useState(false);
-
-  // Confirmed-incident delete modal
-  const [showConfirmDeleteByIncident, setShowConfirmDeleteByIncident] = useState(false);
-  const [deleteReasonByIncident, setDeleteReasonByIncident] = useState('');
-  const [deletingByIncident, setDeletingByIncident] = useState(false);
-
   // ── Derived values ──────────────────────────
 
   const isHealthy = useMemo(() => {
     if (!analysisResult) return true;
     return computeIsHealthy(analysisResult);
   }, [analysisResult]);
-
-  const hasConfirmedIncident = useMemo(
-    () => incidents.some((inc) => inc.status === 'Confirmed'),
-    [incidents],
-  );
 
   const stageProgressRows = useMemo<StageProgressRow[]>(() => {
     if (!sample) return [];
@@ -1361,15 +1098,6 @@ const SampleDetailScreen = () => {
     ];
   }, [latestStage]);
 
-  const currentStageStatus = useMemo(() => toText(latestStage?.status, ''), [latestStage?.status]);
-
-  const canDestroySample = useMemo(() => {
-    if (!sample) return false;
-    const neverExecuted = !sample.executionDate;
-    const stageInProgress = currentStageStatus === 'InProgressed';
-    return neverExecuted && stageInProgress;
-  }, [sample, currentStageStatus]);
-
   const mapUserName = useCallback(
     (userIdOrName: string) => {
       if (!userIdOrName) return 'N/A';
@@ -1386,10 +1114,7 @@ const SampleDetailScreen = () => {
   // ── Data fetching ───────────────────────────
 
   const fetchIncidents = useCallback(async (experimentLogId: string) => {
-    if (!experimentLogId) {
-      setIncidents([]);
-      return;
-    }
+    if (!experimentLogId) { setIncidents([]); return; }
     setIncidentLoading(true);
     try {
       const queryBase = [
@@ -1421,10 +1146,7 @@ const SampleDetailScreen = () => {
       const sampleRes = await fetch(`${cleanBaseUrl}/api/samples/${sampleId}`);
       if (!sampleRes.ok) {
         throw new Error(
-          await parseErrorMessage(
-            sampleRes,
-            `Không thể tải chi tiết mẫu vật (HTTP ${sampleRes.status})`,
-          ),
+          await parseErrorMessage(sampleRes, `Không thể tải chi tiết mẫu vật (HTTP ${sampleRes.status})`),
         );
       }
       const sampleRaw = await sampleRes.text();
@@ -1438,9 +1160,7 @@ const SampleDetailScreen = () => {
           `${cleanBaseUrl}/api/experiment-logs`,
         ]);
         setExperimentLogMap(normalizeExperimentLogMap(logsJson));
-      } catch {
-        setExperimentLogMap(new Map());
-      }
+      } catch { setExperimentLogMap(new Map()); }
 
       try {
         const usersJson = await fetchJsonByFallback([
@@ -1449,9 +1169,7 @@ const SampleDetailScreen = () => {
           `${cleanBaseUrl}/api/user`,
         ]);
         setUserMap(normalizeUsersMap(usersJson));
-      } catch {
-        setUserMap(new Map());
-      }
+      } catch { setUserMap(new Map()); }
 
       if (sampleData.experimentLogId) {
         await fetchIncidents(sampleData.experimentLogId);
@@ -1468,24 +1186,14 @@ const SampleDetailScreen = () => {
     }
   }, [fetchIncidents, sampleId]);
 
-  useEffect(() => {
-    fetchPageData();
-  }, [fetchPageData]);
+  useEffect(() => { fetchPageData(); }, [fetchPageData]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchPageData();
-  };
+  const onRefresh = () => { setRefreshing(true); fetchPageData(); };
 
   // ── Actions ─────────────────────────────────
 
   const pickImageAndAnalyze = async () => {
-    const result = await launchImageLibrary({
-      mediaType: 'photo',
-      quality: 0.9,
-      selectionLimit: 1,
-    });
-
+    const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.9, selectionLimit: 1 });
     const asset = result.assets?.[0] ?? null;
     if (!asset?.uri) return;
 
@@ -1507,16 +1215,13 @@ const SampleDetailScreen = () => {
       });
 
       if (!res.ok) {
-        throw new Error(
-          await parseErrorMessage(res, `Phân tích AI thất bại (HTTP ${res.status})`),
-        );
+        throw new Error(await parseErrorMessage(res, `Phân tích AI thất bại (HTTP ${res.status})`));
       }
 
       const raw = await res.text();
       const json = parseJsonSafely(raw);
       const source = json?.data ?? json ?? {};
 
-      // Build full AnalysisResponse matching the web shape
       const normalized: AnalysisResponse = {
         stageName: toText(source?.stageName, ''),
         disease: {
@@ -1530,7 +1235,6 @@ const SampleDetailScreen = () => {
       setAnalysisResult(normalized);
       setShowAnalysisModal(true);
 
-      // If disease found, refresh incidents
       const healthy = computeIsHealthy(normalized);
       if (!healthy && sample?.experimentLogId) {
         await fetchIncidents(sample.experimentLogId);
@@ -1539,31 +1243,6 @@ const SampleDetailScreen = () => {
       Alert.alert('Lỗi phân tích', String(e?.message || 'Không thể phân tích ảnh'));
     } finally {
       setAnalyzing(false);
-    }
-  };
-
-  const destroyFromAnalysis = async (reason: string) => {
-    if (!sampleId) return;
-    setDestroyingFromAnalysis(true);
-    try {
-      const res = await fetch(`${cleanBaseUrl}/api/samples/${sampleId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason }),
-      });
-      if (!res.ok) {
-        throw new Error(
-          await parseErrorMessage(res, `Tiêu hủy mẫu vật thất bại (HTTP ${res.status})`),
-        );
-      }
-      setShowAnalysisModal(false);
-      Alert.alert('Thành công', 'Mẫu vật đã được tiêu hủy do bệnh.');
-      fetchPageData();
-    } catch (e: any) {
-      Alert.alert('Lỗi thao tác', String(e?.message || 'Không thể tiêu hủy mẫu vật'));
-      throw e; // Let modal handle UI reset
-    } finally {
-      setDestroyingFromAnalysis(false);
     }
   };
 
@@ -1578,7 +1257,6 @@ const SampleDetailScreen = () => {
       const nextNote =
         note || (isConfirmed ? 'Xác nhận bởi kỹ thuật viên.' : 'Loại bỏ bởi kỹ thuật viên.');
 
-      // Optimistic update
       setIncidents((prev) =>
         prev.map((inc) =>
           inc.id === incidentId ? { ...inc, status: nextStatus, reviewNote: nextNote } : inc,
@@ -1592,9 +1270,7 @@ const SampleDetailScreen = () => {
       });
 
       if (!res.ok) {
-        throw new Error(
-          await parseErrorMessage(res, `Cập nhật đánh giá thất bại (HTTP ${res.status})`),
-        );
+        throw new Error(await parseErrorMessage(res, `Cập nhật đánh giá thất bại (HTTP ${res.status})`));
       }
 
       setReviewingIncident(null);
@@ -1602,69 +1278,11 @@ const SampleDetailScreen = () => {
         await fetchIncidents(sample.experimentLogId);
       }
     } catch (e: any) {
-      // Revert on failure
       if (sample?.experimentLogId) await fetchIncidents(sample.experimentLogId);
       throw e;
     } finally {
       setReviewSubmitting(false);
       setUpdatingIncidentId('');
-    }
-  };
-
-  const destroySample = async () => {
-    const trimmedReason = deleteReason.trim();
-    if (!trimmedReason) {
-      Alert.alert('Thiếu lý do', 'Vui lòng nhập lý do tiêu hủy mẫu vật.');
-      return;
-    }
-    if (!sampleId) return;
-    setDeleting(true);
-    try {
-      const res = await fetch(`${cleanBaseUrl}/api/samples/${sampleId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: trimmedReason }),
-      });
-      if (!res.ok) {
-        throw new Error(
-          await parseErrorMessage(res, `Tiêu hủy mẫu vật thất bại (HTTP ${res.status})`),
-        );
-      }
-      setDeleteModalVisible(false);
-      setDeleteReason('');
-      Alert.alert('Thành công', 'Mẫu vật đã được tiêu hủy do bệnh.');
-      fetchPageData();
-    } catch (e: any) {
-      Alert.alert('Lỗi thao tác', String(e?.message || 'Không thể tiêu hủy mẫu vật'));
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const destroySampleByConfirmedIncident = async () => {
-    if (!sampleId) return;
-    setDeletingByIncident(true);
-    try {
-      const res = await fetch(`${cleanBaseUrl}/api/samples/${sampleId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reason: deleteReasonByIncident.trim() || 'Mẫu vật có sự cố bệnh đã được xác nhận.',
-        }),
-      });
-      if (!res.ok) {
-        throw new Error(
-          await parseErrorMessage(res, `Tiêu hủy mẫu vật thất bại (HTTP ${res.status})`),
-        );
-      }
-      setShowConfirmDeleteByIncident(false);
-      setDeleteReasonByIncident('');
-      Alert.alert('Thành công', 'Mẫu vật đã được tiêu hủy.');
-      fetchPageData();
-    } catch (e: any) {
-      Alert.alert('Lỗi thao tác', String(e?.message || 'Không thể tiêu hủy mẫu vật'));
-    } finally {
-      setDeletingByIncident(false);
     }
   };
 
@@ -1690,8 +1308,6 @@ const SampleDetailScreen = () => {
       </View>
     </View>
   );
-
-  // ── Derived display values ───────────────────
 
   const createdByName = sample ? mapUserName(sample.createdBy) : 'N/A';
   const updatedByName = sample ? mapUserName(sample.updatedBy) : 'N/A';
@@ -1747,17 +1363,14 @@ const SampleDetailScreen = () => {
             updatedByName={updatedByName}
             experimentLogName={experimentLogName}
           />
-
           <StageProgress rows={stageProgressRows} />
           <ReportTable rows={reportRows} />
           <ImageGallery images={latestImages} />
-
           <AnalysisUploadSection
             selectedImage={selectedImage}
             analyzing={analyzing}
             onPickImage={pickImageAndAnalyze}
           />
-
           <DiseaseIncidentList
             incidents={filteredIncidents}
             filterStatus={incidentFilterStatus}
@@ -1765,51 +1378,13 @@ const SampleDetailScreen = () => {
             onOpenReview={(item) => setReviewingIncident(item)}
             updatingIncidentId={updatingIncidentId}
           />
-
           {incidentLoading ? (
             <SectionCard title="Đồng bộ dữ liệu sự cố">
               <Text style={styles.mutedText}>Đang tải danh sách sự cố bệnh...</Text>
             </SectionCard>
           ) : null}
-
-          <SectionCard title="Hành động">
-            {/* Destroy button — confirmed incident path */}
-            {hasConfirmedIncident && (
-              <>
-                <TouchableOpacity
-                  style={[styles.dangerButton, { marginBottom: 8 }]}
-                  activeOpacity={0.85}
-                  onPress={() => setShowConfirmDeleteByIncident(true)}
-                >
-                  <Text style={styles.dangerButtonText}>Tiêu hủy (sự cố đã xác nhận)</Text>
-                </TouchableOpacity>
-                <Text style={[styles.helperText, { marginBottom: 14 }]}>
-                  Có ít nhất một sự cố bệnh đã được xác nhận. Bạn có thể tiêu hủy mẫu vật.
-                </Text>
-              </>
-            )}
-
-            {/* Destroy button — manual condition path */}
-            <TouchableOpacity
-              style={[styles.dangerButton, !canDestroySample && styles.dangerButtonDisabled]}
-              activeOpacity={0.85}
-              disabled={!canDestroySample}
-              onPress={() => setDeleteModalVisible(true)}
-            >
-              <Text style={styles.dangerButtonText}>Tiêu hủy mẫu vật</Text>
-            </TouchableOpacity>
-              <Text style={[styles.helperText, { fontStyle: 'italic' }]}>
-                Điều kiện: Mẫu chưa bị tiêu hủy trước đó và trạng thái giai đoạn hiện tại là{' '}
-              <Text style={{ color: '#2C7A46', fontWeight: 'bold' }}>
-                Đang thực hiện
-              </Text>
-              .
-            </Text>
-          </SectionCard>
         </ScrollView>
       ) : null}
-
-      {/* ── Modals ── */}
 
       {/* AI Analysis Result Modal */}
       <AnalysisModal
@@ -1817,119 +1392,16 @@ const SampleDetailScreen = () => {
         analysisResult={analysisResult}
         isHealthy={isHealthy}
         onClose={() => setShowAnalysisModal(false)}
-        onDestroy={destroyFromAnalysis}
-        isDestroying={destroyingFromAnalysis}
       />
 
       {/* Review Incident Modal */}
       <ReviewIncidentModal
         visible={!!reviewingIncident}
         incident={reviewingIncident}
-        onClose={() => {
-          if (!reviewSubmitting) setReviewingIncident(null);
-        }}
+        onClose={() => { if (!reviewSubmitting) setReviewingIncident(null); }}
         onSubmit={submitReview}
         submitting={reviewSubmitting}
       />
-
-      {/* Confirmed-incident destroy modal */}
-      <Modal
-        visible={showConfirmDeleteByIncident}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowConfirmDeleteByIncident(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Tiêu hủy mẫu vật (sự cố đã xác nhận)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập lý do tiêu hủy (tuỳ chọn)"
-              placeholderTextColor="#6F857A"
-              value={deleteReasonByIncident}
-              onChangeText={setDeleteReasonByIncident}
-              multiline
-              editable={!deletingByIncident}
-            />
-            <View style={styles.modalActions}>
-              <View style={styles.actionHalf}>
-                <TouchableOpacity
-                  style={styles.secondaryButton}
-                  activeOpacity={0.85}
-                  onPress={() => {
-                    if (deletingByIncident) return;
-                    setShowConfirmDeleteByIncident(false);
-                    setDeleteReasonByIncident('');
-                  }}
-                >
-                  <Text style={styles.secondaryButtonText}>Hủy</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.actionHalf}>
-                <TouchableOpacity
-                  style={[styles.primaryButton, styles.primaryDangerButton]}
-                  activeOpacity={0.85}
-                  onPress={destroySampleByConfirmedIncident}
-                  disabled={deletingByIncident}
-                >
-                  <Text style={styles.primaryButtonText}>
-                    {deletingByIncident ? 'Đang xử lý...' : 'Xác nhận'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Manual destroy modal */}
-      <Modal
-        visible={deleteModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDeleteModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Xác nhận tiêu hủy mẫu vật</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nhập lý do tiêu hủy"
-              placeholderTextColor="#6F857A"
-              value={deleteReason}
-              onChangeText={setDeleteReason}
-              multiline
-              editable={!deleting}
-            />
-            <View style={styles.modalActions}>
-              <View style={styles.actionHalf}>
-                <TouchableOpacity
-                  style={styles.secondaryButton}
-                  activeOpacity={0.85}
-                  onPress={() => {
-                    if (deleting) return;
-                    setDeleteModalVisible(false);
-                  }}
-                >
-                  <Text style={styles.secondaryButtonText}>Hủy</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.actionHalf}>
-                <TouchableOpacity
-                  style={[styles.primaryButton, styles.primaryDangerButton]}
-                  activeOpacity={0.85}
-                  onPress={destroySample}
-                  disabled={deleting}
-                >
-                  <Text style={styles.primaryButtonText}>
-                    {deleting ? 'Đang xử lý...' : 'Xác nhận'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       <CustomTabBar />
     </SafeAreaView>
