@@ -116,7 +116,7 @@ interface ExperimentLogDetail {
   id?: string;
   name?: string;
   status?: string;
-   batchId?: number;
+  batchId?: number;
   currentStageOrder?: number | null;
   assignedTo?: string;
   createdBy?: string;
@@ -356,188 +356,28 @@ const CancelModal = ({ visible, onClose, onConfirm, isLoading }: CancelModalProp
 };
 
 // =============================================================================
-// CHANGE STAGE SUCCESS MODAL
-// =============================================================================
-
-interface ChangeStageSuccessModalProps {
-  visible: boolean;
-  onClose: () => void;
-}
-
-const ChangeStageSuccessModal = ({ visible, onClose }: ChangeStageSuccessModalProps) => (
-  <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-    <View style={styles.modalOverlay}>
-      <View style={styles.modalBox}>
-        <View style={styles.modalSuccessIcon}>
-          <CheckCircle2 size={36} color="#4E8B62" />
-        </View>
-        <Text style={styles.modalTitle}>Chuyển giai đoạn thành công</Text>
-        <Text style={styles.modalMessage}>
-          Yêu cầu chuyển giai đoạn đã được gửi thành công. Vui lòng chờ duyệt từ quản lý.
-        </Text>
-        <TouchableOpacity
-          style={[styles.modalBtnPrimary, { alignSelf: 'stretch' }]}
-          onPress={onClose}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.modalBtnPrimaryText}>Đóng</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </Modal>
-);
-
-// =============================================================================
-// CREATE PROTOCORM MODAL
-// =============================================================================
-
-interface CreateProtocormModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onConfirm: (quantity: number) => void;
-  isLoading: boolean;
-  expectedSampleCount?: number;
-  currentSampleCount: number;
-}
-
-const CreateProtocormModal = ({
-  visible,
-  onClose,
-  onConfirm,
-  isLoading,
-  expectedSampleCount,
-  currentSampleCount,
-}: CreateProtocormModalProps) => {
-  const [qty, setQty] = useState('');
-
-  const handleConfirm = () => {
-    const n = parseInt(qty, 10);
-    if (n > 0) {
-      onConfirm(n);
-      setQty('');
-    }
-  };
-
-  const handleClose = () => {
-    setQty('');
-    onClose();
-  };
-
-  const remaining = Math.max(0, (expectedSampleCount ?? 0) - currentSampleCount);
-  const parsedQty = parseInt(qty, 10) || 0;
-  const showWarning = parsedQty > remaining && remaining > 0;
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalBox}>
-          <Text style={styles.modalTitle}>Tạo Protocorm</Text>
-
-          <View style={styles.protocormInfoRow}>
-            <Text style={styles.protocormInfoText}>
-              Mong muốn:{' '}
-              <Text style={{ fontWeight: '800' }}>{expectedSampleCount ?? 0}</Text>
-            </Text>
-            <Text style={styles.protocormInfoText}>
-              Hiện tại:{' '}
-              <Text style={{ fontWeight: '800' }}>{currentSampleCount}</Text>
-            </Text>
-          </View>
-
-          <Text style={styles.modalLabel}>
-            Số lượng{' '}
-            <Text style={{ color: '#DC2626' }}>*</Text>
-          </Text>
-          <TextInput
-            style={[styles.modalInput, { height: 48 }]}
-            value={qty}
-            onChangeText={(v) => {
-              if (v === '' || /^[1-9]\d*$/.test(v)) setQty(v);
-            }}
-            placeholder="Nhập số lượng..."
-            placeholderTextColor="#9CA3AF"
-            keyboardType="number-pad"
-          />
-
-          {showWarning && (
-            <Text style={styles.protocormWarning}>
-              ⚠ Vượt quá số lượng còn lại ({remaining})
-            </Text>
-          )}
-
-          <View style={styles.modalFooterRow}>
-            <TouchableOpacity
-              style={[styles.modalBtnSecondary, { flex: 1 }]}
-              onPress={handleClose}
-              disabled={isLoading}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.modalBtnSecondaryText}>Đóng</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.modalBtnPrimary,
-                { flex: 1 },
-                (!qty || parsedQty <= 0 || isLoading) && styles.modalBtnDisabled,
-              ]}
-              onPress={handleConfirm}
-              disabled={!qty || parsedQty <= 0 || isLoading}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.modalBtnPrimaryText}>
-                {isLoading ? 'Đang tạo...' : 'Tạo'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-};
-
-// =============================================================================
 // ACTION BUTTONS BAR
 // =============================================================================
 
 interface ActionButtonsProps {
   detail: ExperimentLogDetail;
-  samples: SampleItem[];
   onStart: () => void;
   onCancel: () => void;
-  onChangeStage: () => void;
-  onCreateProtocorm: () => void;
   isUpdatingStatus: boolean;
-  isChangingStage: boolean;
 }
 
 const ActionButtons = ({
   detail,
-  samples,
   onStart,
   onCancel,
-  onChangeStage,
-  onCreateProtocorm,
   isUpdatingStatus,
-  isChangingStage,
 }: ActionButtonsProps) => {
   const status = normalizeStatus(detail.status);
-  const stages = detail.method?.methodStages ?? [];
-  const lastStageOrder =
-    stages.length > 0 ? Math.max(...stages.map((s) => s.order ?? 0)) : undefined;
-  const isLastStage =
-    detail.currentStageOrder != null &&
-    lastStageOrder != null &&
-    detail.currentStageOrder === lastStageOrder;
-
-  const currentStage = stages.find((s) => s.order === detail.currentStageOrder);
-  const canCreateProtocorm =
-    currentStage?.isSampleGenerated === true && samples.length === 0;
 
   const showStart = status === 'created';
   const showCancel = status === 'created';
-  const showChangeStage = status === 'inprogress' && !isLastStage;
 
-  if (!showStart && !showCancel && !showChangeStage && !canCreateProtocorm) {
+  if (!showStart && !showCancel) {
     return null;
   }
 
@@ -557,29 +397,6 @@ const ActionButtons = ({
         >
           <Text style={styles.btnText}>
             {isUpdatingStatus ? 'Đang xử lý...' : 'Bắt đầu'}
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      {canCreateProtocorm && (
-        <TouchableOpacity
-          style={styles.btnProtocorm}
-          onPress={onCreateProtocorm}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.btnText}>Tạo Protocorm</Text>
-        </TouchableOpacity>
-      )}
-
-      {showChangeStage && (
-        <TouchableOpacity
-          style={styles.btnChangeStage}
-          onPress={onChangeStage}
-          disabled={isChangingStage}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.btnText}>
-            {isChangingStage ? 'Đang xử lý...' : 'Chuyển giai đoạn'}
           </Text>
         </TouchableOpacity>
       )}
@@ -693,7 +510,7 @@ const ChemicalsAndMaterials = ({ currentStage, currentStageName }: ChemicalsAndM
 };
 
 // =============================================================================
-// EXPERIMENT HEADER (updated with creator + expectedSampleCount)
+// EXPERIMENT HEADER
 // =============================================================================
 
 const ExperimentHeader = ({
@@ -723,7 +540,7 @@ const ExperimentHeader = ({
 );
 
 // =============================================================================
-// SEEDLING INFO (unchanged)
+// SEEDLING INFO
 // =============================================================================
 
 const SeedlingInfo = ({ detail }: { detail: ExperimentLogDetail }) => {
@@ -763,7 +580,7 @@ const SeedlingInfo = ({ detail }: { detail: ExperimentLogDetail }) => {
 };
 
 // =============================================================================
-// METHOD STAGES (updated with isSampleGenerated tag)
+// METHOD STAGES
 // =============================================================================
 
 const MethodStages = ({
@@ -900,7 +717,7 @@ const MethodStages = ({
 };
 
 // =============================================================================
-// SAMPLE LIST (unchanged)
+// SAMPLE LIST
 // =============================================================================
 
 interface SampleListProps {
@@ -956,7 +773,7 @@ const SampleList = ({ samples, onPressSample }: SampleListProps) => {
 };
 
 // =============================================================================
-// RESULT SECTION (unchanged)
+// RESULT SECTION
 // =============================================================================
 
 const ResultSection = ({ detail }: { detail: ExperimentLogDetail }) => (
@@ -1012,10 +829,6 @@ const ExperimentLogDetailScreen = () => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [isChangingStage, setIsChangingStage] = useState(false);
-  const [isChangeStageSuccessModalOpen, setIsChangeStageSuccessModalOpen] = useState(false);
-  const [isProtocormModalOpen, setIsProtocormModalOpen] = useState(false);
-  const [isCreatingProtocorm, setIsCreatingProtocorm] = useState(false);
 
   const fetchDetail = useCallback(async () => {
     if (!experimentLogId) {
@@ -1072,7 +885,6 @@ const ExperimentLogDetailScreen = () => {
       .catch(() => {});
   }, [detail?.createdBy]);
 
-
   const handleStart = async () => {
     if (!experimentLogId) return;
     setIsUpdatingStatus(true);
@@ -1115,69 +927,6 @@ const ExperimentLogDetailScreen = () => {
       Alert.alert('Lỗi', msg);
     } finally {
       setIsCancelling(false);
-    }
-  };
-
-  const handleChangeStage = async () => {
-  if (!experimentLogId || !detail) return;
-  setIsChangingStage(true);
-  try {
-    const res = await authFetch(
-      `${cleanBaseUrl}/api/experiment-logs/${experimentLogId}/status`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({
-          status: 'WaitingForChangeStage',
-          batchId: detail.batchId ?? 0,
-          conclusion: '',
-          issues: '',
-          recommendations: '',
-        }),
-      },
-    );
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.log('Change stage error:', errText);
-      throw new Error(`HTTP ${res.status}: ${errText}`);
-    }
-
-    setDetail((prev) => prev ? { ...prev, status: 'WaitingForChangeStage' } : prev);
-    setIsChangeStageSuccessModalOpen(true);
-  } catch (e: any) {
-    const msg = String(e?.message || 'Không thể chuyển giai đoạn');
-    Alert.alert('Lỗi', msg);
-  } finally {
-    setIsChangingStage(false);
-  }
-};
-
-  const handleCreateProtocorm = async (quantity: number) => {
-    if (!experimentLogId || quantity <= 0) return;
-    setIsCreatingProtocorm(true);
-    try {
-      const res = await authFetch(`${cleanBaseUrl}/api/samples`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ experimentLogId, quantity }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      // Refetch to get updated samples list
-      const refreshRes = await authFetch(
-        `${cleanBaseUrl}/api/experiment-logs/${experimentLogId}`,
-      );
-      if (refreshRes.ok) {
-        const raw = await refreshRes.text();
-        const json = raw ? JSON.parse(raw) : {};
-        setDetail(normalizeExperimentLog(json));
-      }
-      setIsProtocormModalOpen(false);
-    } catch (e: any) {
-      const msg = String(e?.message || 'Không thể tạo Protocorm');
-      Alert.alert('Lỗi', msg);
-    } finally {
-      setIsCreatingProtocorm(false);
     }
   };
 
@@ -1245,18 +994,6 @@ const ExperimentLogDetailScreen = () => {
         onConfirm={handleCancel}
         isLoading={isCancelling}
       />
-      <ChangeStageSuccessModal
-        visible={isChangeStageSuccessModalOpen}
-        onClose={() => setIsChangeStageSuccessModalOpen(false)}
-      />
-      <CreateProtocormModal
-        visible={isProtocormModalOpen}
-        onClose={() => setIsProtocormModalOpen(false)}
-        onConfirm={handleCreateProtocorm}
-        isLoading={isCreatingProtocorm}
-        expectedSampleCount={detail?.expectedSampleCount}
-        currentSampleCount={samples.length}
-      />
 
       {/* Page header */}
       <View style={styles.headerWrap}>
@@ -1275,13 +1012,9 @@ const ExperimentLogDetailScreen = () => {
       {!loading && detail ? (
         <ActionButtons
           detail={detail}
-          samples={samples}
           onStart={async () => { await handleStart(); }}
           onCancel={() => setIsCancelModalOpen(true)}
-          onChangeStage={async () => { await handleChangeStage(); }}
-          onCreateProtocorm={() => setIsProtocormModalOpen(true)}
           isUpdatingStatus={isUpdatingStatus}
-          isChangingStage={isChangingStage}
         />
       ) : null}
 
@@ -1325,7 +1058,6 @@ const ExperimentLogDetailScreen = () => {
             currentStageOrder={detail?.currentStageOrder ?? null}
           />
 
-          {/* NEW: Chemicals & Materials for current stage */}
           <ChemicalsAndMaterials
             currentStage={currentStage}
             currentStageName={currentStageName}

@@ -19,9 +19,22 @@ interface Props {
   onPress?: () => void;
 }
 
+// ── Status config ────────────────────────────────────────────
+const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
+  created:               { label: 'Mới tạo',         bg: '#F3F4F6', text: '#6B7280' },
+  inprogress:            { label: 'Đang thực hiện',   bg: '#DBEAFE', text: '#2563EB' },
+  waitingforchangestage: { label: 'Chờ duyệt',        bg: '#FEF3C7', text: '#D97706' },
+  completed:             { label: 'Hoàn thành',       bg: '#D1FAE5', text: '#059669' },
+  destroyed:             { label: 'Thất bại',         bg: '#FEE2E2', text: '#DC2626' },
+  cancelled:             { label: 'Đã hủy',           bg: '#F3F4F6', text: '#9CA3AF' },
+};
+
+const getStatusStyle = (status: string) =>
+  STATUS_CONFIG[status?.toLowerCase()] ?? { label: status, bg: '#F3F4F6', text: '#6B7280' };
+
 export const ExperimentLogItem = ({ item, index, onPress }: Props) => {
-  const isCreated = item.status === 'Created';
   const formattedDate = item.createdDate?.split('T')[0] ?? '';
+  const statusStyle = getStatusStyle(item.status);
 
   return (
     <Animated.View entering={FadeInUp.delay(Math.min(index * 100, 500)).springify()}>
@@ -34,8 +47,26 @@ export const ExperimentLogItem = ({ item, index, onPress }: Props) => {
           <Text style={[styles.reportDate, { marginTop: 4 }]}>Ngày tạo: {formattedDate}</Text>
         </View>
 
-        <View style={[styles.statusTag, isCreated ? styles.statusPending : styles.statusDone]}>
-          <Text style={styles.statusText}>GĐ: {item.currentStageOrder}</Text>
+        {/* ── Right column: stage + status ── */}
+        <View style={{ alignItems: 'center', gap: 6 }}>
+          <View style={[styles.statusTag, { backgroundColor: '#E8F5E9' }]}>
+            <Text style={styles.statusText}>GĐ: {item.currentStageOrder}</Text>
+          </View>
+
+          <View style={{
+            backgroundColor: statusStyle.bg,
+            borderRadius: 8,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+          }}>
+            <Text style={{
+              fontSize: 11,
+              fontWeight: '600',
+              color: statusStyle.text,
+            }}>
+              {statusStyle.label}
+            </Text>
+          </View>
         </View>
       </TouchableOpacity>
     </Animated.View>

@@ -21,7 +21,7 @@ import { API_URL } from '@env';
 import { CustomTabBar } from '../../components/CustomTabBar';
 import { translateMatchResultVi, translateMonitoringMetricVi, translateMonitoringTermVi } from '../../utils/monitoringTranslations';
 import { translateStatusVi } from '../../utils/statusTranslations';
-import { reportDetailStyles as styles } from './reportDetailStyles';
+import { reportDetailStyles as styles } from './ReportDetailStyles';
 
 const cleanBaseUrl = String(API_URL).trim().replace(/\/+$/, '');
 
