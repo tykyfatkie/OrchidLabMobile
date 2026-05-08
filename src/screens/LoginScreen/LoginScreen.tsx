@@ -23,6 +23,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { BlurView } from '@react-native-community/blur';
 import { useNavigation } from '@react-navigation/native';
 import { ChevronRight, ChevronUp, Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
+import messaging from '@react-native-firebase/messaging';
 
 import AnimatedInput from '../../components/AnimatedInput';
 import { useAuth } from '../../context/AuthContext';
@@ -70,7 +71,6 @@ const LoginScreen: React.FC = () => {
       }
     });
 
-  // Ảnh nền 2 fade in khi vuốt lên
   const bg2AnimStyle = useAnimatedStyle(() => ({
     opacity: interpolate(dragY.value, [0, -SWIPE_LIMIT], [0, 1], Extrapolation.CLAMP),
   }));
@@ -123,6 +123,22 @@ const LoginScreen: React.FC = () => {
           email: data.email || decoded?.email || email,
           roleName: data.roleName || decoded?.role || 'Nhân viên',
         }, token || null);
+
+        // Cập nhật FCM token lên server
+        try {
+          const fcmToken = await messaging().getToken();
+          await fetch(`${API_URL}/api/user/fcm-token`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(fcmToken),
+          });
+        } catch (e) {
+          console.log('FCM token update failed:', e);
+        }
+
         navigation.replace('Reports');
       } else {
         Alert.alert('Lỗi', data?.detail || 'Thông tin không chính xác');
@@ -177,15 +193,13 @@ const LoginScreen: React.FC = () => {
               <Text style={styles.headlineSub}>Orchid Lab System</Text>
             </Animated.View>
 
-            {/* Card với BlurView bên trong */}
             <Animated.View style={[styles.glassCard, formStyle]}>
               <BlurView
                 style={styles.blurFill}
-                blurType="light"       // "light" | "dark" | "xlight" | "prominent" | "regular"
+                blurType="light"
                 blurAmount={18}
                 reducedTransparencyFallbackColor="rgba(255,255,255,0.82)"
               />
-              {/* Nội dung form đặt trên blur */}
               <View style={styles.cardInner}>
                 <Text style={styles.cardTitle}>Chào mừng!</Text>
 

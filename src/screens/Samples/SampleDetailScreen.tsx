@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { ArrowLeft } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Asset, launchImageLibrary } from 'react-native-image-picker';
+import { Asset, launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import { API_URL } from '@env';
 
 import { CustomTabBar } from '../../components/CustomTabBar';
@@ -578,7 +578,7 @@ const DiseaseIncidentList = ({
 };
 
 // ─────────────────────────────────────────────
-// Modal: Full AI Analysis Result (no destroy)
+// Modal: Full AI Analysis Result
 // ─────────────────────────────────────────────
 
 const AnalysisModal = ({
@@ -601,7 +601,6 @@ const AnalysisModal = ({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={modalStyles.overlay}>
         <View style={modalStyles.sheet}>
-          {/* Header */}
           <View style={modalStyles.sheetHeader}>
             <Text style={modalStyles.sheetTitle}>Kết quả phân tích AI</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -614,7 +613,6 @@ const AnalysisModal = ({
             contentContainerStyle={modalStyles.sheetBody}
             showsVerticalScrollIndicator={false}
           >
-            {/* Summary row */}
             <View style={modalStyles.summaryRow}>
               <View style={modalStyles.summaryCell}>
                 <Text style={modalStyles.summaryLabel}>Giai đoạn</Text>
@@ -628,7 +626,6 @@ const AnalysisModal = ({
               </View>
             </View>
 
-            {/* Disease description */}
             {!!analysisResult.disease?.description && (
               <View style={modalStyles.descBox}>
                 <Text style={modalStyles.descLabel}>Mô tả bệnh</Text>
@@ -636,7 +633,6 @@ const AnalysisModal = ({
               </View>
             )}
 
-            {/* Healthy badge */}
             <View
               style={[
                 modalStyles.healthBadge,
@@ -648,7 +644,6 @@ const AnalysisModal = ({
               </Text>
             </View>
 
-            {/* Detailed analytic result */}
             <Text style={modalStyles.subTitle}>Kết quả phân tích chi tiết</Text>
             <View style={modalStyles.analyticGrid}>
               {ANALYTIC_LABELS.map(({ key, label }) => {
@@ -689,7 +684,6 @@ const AnalysisModal = ({
             </View>
           </ScrollView>
 
-          {/* Footer */}
           <View style={modalStyles.sheetFooter}>
             <TouchableOpacity style={modalStyles.closeFooterBtn} onPress={onClose} activeOpacity={0.85}>
               <Text style={modalStyles.closeFooterBtnText}>Đóng</Text>
@@ -1192,8 +1186,7 @@ const SampleDetailScreen = () => {
 
   // ── Actions ─────────────────────────────────
 
-  const pickImageAndAnalyze = async () => {
-    const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.9, selectionLimit: 1 });
+  const handleImageResult = async (result: any) => {
     const asset = result.assets?.[0] ?? null;
     if (!asset?.uri) return;
 
@@ -1244,6 +1237,30 @@ const SampleDetailScreen = () => {
     } finally {
       setAnalyzing(false);
     }
+  };
+
+  const pickImageAndAnalyze = async () => {
+    Alert.alert(
+      'Chọn ảnh',
+      'Bạn muốn chụp ảnh mới hay chọn từ thư viện?',
+      [
+        {
+          text: 'Chụp ảnh',
+          onPress: async () => {
+            const result = await launchCamera({ mediaType: 'photo', quality: 0.9 });
+            await handleImageResult(result);
+          },
+        },
+        {
+          text: 'Thư viện',
+          onPress: async () => {
+            const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.9, selectionLimit: 1 });
+            await handleImageResult(result);
+          },
+        },
+        { text: 'Hủy', style: 'cancel' },
+      ],
+    );
   };
 
   const submitReview = async (isConfirmed: boolean, note: string) => {
@@ -1386,7 +1403,6 @@ const SampleDetailScreen = () => {
         </ScrollView>
       ) : null}
 
-      {/* AI Analysis Result Modal */}
       <AnalysisModal
         visible={showAnalysisModal}
         analysisResult={analysisResult}
@@ -1394,7 +1410,6 @@ const SampleDetailScreen = () => {
         onClose={() => setShowAnalysisModal(false)}
       />
 
-      {/* Review Incident Modal */}
       <ReviewIncidentModal
         visible={!!reviewingIncident}
         incident={reviewingIncident}
