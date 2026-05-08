@@ -11,12 +11,27 @@ import {
   ScrollView,
 } from 'react-native';
 import Svg, { Path, Polyline, Rect, Circle, Line } from 'react-native-svg';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { styles } from './NotificationStyles';
 import { useNotificationStore } from '../../store/useNotificationStore';
 import { useAuth } from '../../context/AuthContext';
 
+// ─── Navigation Types ─────────────────────────────────────────────────────────
+
+type RootStackParamList = {
+  TaskDetail:          { taskId: string };
+  ExperimentLogDetail: { experimentLogId: string };
+  ReportDetail:        { monitoringLogId: string };
+  SampleDetail:        { sampleId: string };
+};
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
+
+type NotificationTargetType =
+  | 'Task'
+  | 'ExperimentLog'
+  | 'MonitoringLog'
+  | 'Sample';
 
 type Notification = {
   id: string;
@@ -24,6 +39,8 @@ type Notification = {
   content: string;
   createdAt: string;
   isRead: boolean;
+  notificationTargetType: NotificationTargetType;
+  targetId: string;
 };
 
 type Section = {
@@ -72,24 +89,9 @@ const IconDocumentText = ({ size = 22, color = '#7C3AED', strokeWidth = 1.8 }: S
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    <Line
-      x1="16" y1="13" x2="8" y2="13"
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-    />
-    <Line
-      x1="16" y1="17" x2="8" y2="17"
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-    />
-    <Polyline
-      points="10 9 9 9 8 9"
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-    />
+    <Line x1="16" y1="13" x2="8" y2="13" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    <Line x1="16" y1="17" x2="8" y2="17" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    <Polyline points="10 9 9 9 8 9" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
   </Svg>
 );
 
@@ -102,12 +104,7 @@ const IconFlask = ({ size = 22, color = '#0EA5E9', strokeWidth = 1.8 }: SvgIconP
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    <Path
-      d="M6.5 15.5h11"
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-    />
+    <Path d="M6.5 15.5h11" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
     <Circle cx="9.5" cy="18" r="1" fill={color} />
     <Circle cx="13" cy="17" r="0.8" fill={color} />
   </Svg>
@@ -115,11 +112,7 @@ const IconFlask = ({ size = 22, color = '#0EA5E9', strokeWidth = 1.8 }: SvgIconP
 
 const IconCheckbox = ({ size = 22, color = '#16A34A', strokeWidth = 1.8 }: SvgIconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Rect
-      x="3" y="3" width="18" height="18" rx="3"
-      stroke={color}
-      strokeWidth={strokeWidth}
-    />
+    <Rect x="3" y="3" width="18" height="18" rx="3" stroke={color} strokeWidth={strokeWidth} />
     <Path
       d="M8 12l3 3 5-5"
       stroke={color}
@@ -157,20 +150,17 @@ type IconConfig = {
   bg: string;
 };
 
-const getIconConfig = (title: string): IconConfig => {
-  const t = title.toLowerCase();
-  if (t.includes('báo cáo'))    return { component: IconDocumentText, color: '#7C3AED', bg: '#EDE9FE' };
-  if (t.includes('thí nghiệm')) return { component: IconFlask,        color: '#0EA5E9', bg: '#E0F2FE' };
-  if (t.includes('task'))       return { component: IconCheckbox,     color: '#16A34A', bg: '#DCFCE7' };
-  return                               { component: IconBell,         color: '#F59E0B', bg: '#FEF3C7' };
-};
-
-const getNavigationTarget = (title: string): string | null => {
-  const t = title.toLowerCase();
-  if (t.includes('task'))       return 'Tasks';
-  if (t.includes('thí nghiệm')) return 'ExperimentLog';
-  if (t.includes('báo cáo'))    return 'Reports';
-  return null;
+const getIconConfig = (targetType: NotificationTargetType): IconConfig => {
+  switch (targetType) {
+    case 'MonitoringLog':
+      return { component: IconDocumentText, color: '#7C3AED', bg: '#EDE9FE' };
+    case 'ExperimentLog':
+      return { component: IconFlask,        color: '#0EA5E9', bg: '#E0F2FE' };
+    case 'Task':
+      return { component: IconCheckbox,     color: '#16A34A', bg: '#DCFCE7' };
+    case 'Sample':
+      return { component: IconBell,         color: '#F59E0B', bg: '#FEF3C7' };
+  }
 };
 
 const formatTime = (createdAt: string): string => {
@@ -187,11 +177,12 @@ const formatTime = (createdAt: string): string => {
 
 const matchesFilter = (n: Notification, filter: FilterKey): boolean => {
   if (filter === 'all') return true;
-  const t = n.title.toLowerCase();
-  if (filter === 'task')       return t.includes('task');
-  if (filter === 'experiment') return t.includes('thí nghiệm');
-  if (filter === 'report')     return t.includes('báo cáo');
-  return true;
+  switch (filter) {
+    case 'task':       return n.notificationTargetType === 'Task';
+    case 'experiment': return n.notificationTargetType === 'ExperimentLog';
+    case 'report':     return n.notificationTargetType === 'MonitoringLog';
+    default:           return true;
+  }
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -208,17 +199,17 @@ const NotificationItem = ({
   isLast,
 }: {
   item: Notification;
-  onPress: (id: string, isRead: boolean, title: string) => void;
+  onPress: (item: Notification) => void;
   isLast: boolean;
 }) => {
-  const icon = getIconConfig(item.title);
+  const icon = getIconConfig(item.notificationTargetType);
   const IconComponent = icon.component;
 
   return (
     <>
       <TouchableOpacity
         activeOpacity={0.6}
-        onPress={() => onPress(item.id, item.isRead, item.title)}
+        onPress={() => onPress(item)}
         style={[styles.itemRow, !item.isRead && styles.itemRowUnread]}
       >
         {/* Unread dot */}
@@ -267,7 +258,7 @@ const NotificationItem = ({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 const NotificationScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { user } = useAuth();
   const { notifications, isLoading, hasMore, pageNumber, fetchNotifications, markAsRead } =
     useNotificationStore();
@@ -284,10 +275,24 @@ const NotificationScreen = () => {
     }
   };
 
-  const handlePress = (id: string, isRead: boolean, title: string) => {
-    if (!isRead) markAsRead(id);
-    const target = getNavigationTarget(title);
-    if (target) navigation.navigate(target as never);
+  // ── Type-safe navigation — route names khớp với AuthNavigator ──
+  const handlePress = (item: Notification) => {
+    if (!item.isRead) markAsRead(item.id);
+
+    switch (item.notificationTargetType) {
+      case 'Task':
+        navigation.navigate('TaskDetail', { taskId: item.targetId });
+        break;
+      case 'ExperimentLog':
+        navigation.navigate('ExperimentLogDetail', { experimentLogId: item.targetId });
+        break;
+      case 'MonitoringLog':
+        navigation.navigate('ReportDetail', { monitoringLogId: item.targetId });
+        break;
+      case 'Sample':
+        navigation.navigate('SampleDetail', { sampleId: item.targetId });
+        break;
+    }
   };
 
   const filtered = useMemo(

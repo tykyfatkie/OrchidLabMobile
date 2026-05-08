@@ -1,15 +1,16 @@
 # ninja log v5
-1	73	0	D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/arm64-v8a/CMakeFiles/cmake.verify_globs	1c558d4e8a81731a
+1	23	7999101015515420	D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/arm64-v8a/CMakeFiles/cmake.verify_globs	1c558d4e8a81731a
 27358	41332	7983860873270437	rnscreens_autolinked_build/CMakeFiles/react_codegen_rnscreens.dir/6aa47d5c8885163b2b0176a1d2b4e0f5/generated/source/codegen/jni/react/renderer/components/rnscreens/Props.cpp.o	45d12858e50f1e2c
 46	4269	7983860503232279	rnasyncstorage_autolinked_build/CMakeFiles/react_codegen_rnasyncstorage.dir/react/renderer/components/rnasyncstorage/States.cpp.o	e598f740db35711d
+5344	12301	7983860583213815	rngesturehandler_codegen_autolinked_build/CMakeFiles/react_codegen_rngesturehandler_codegen.dir/react/renderer/components/rngesturehandler_codegen/ComponentDescriptors.cpp.o	d355dba0158be859
 20	4314	7983860503715656	rnasyncstorage_autolinked_build/CMakeFiles/react_codegen_rnasyncstorage.dir/react/renderer/components/rnasyncstorage/EventEmitters.cpp.o	970b2d066ad34c3e
 9735	14107	7983860601615004	RNImagePickerSpec_autolinked_build/CMakeFiles/react_codegen_RNImagePickerSpec.dir/react/renderer/components/RNImagePickerSpec/States.cpp.o	607730bfc23332be
-5344	12301	7983860583213815	rngesturehandler_codegen_autolinked_build/CMakeFiles/react_codegen_rngesturehandler_codegen.dir/react/renderer/components/rngesturehandler_codegen/ComponentDescriptors.cpp.o	d355dba0158be859
+89	5343	7983860513669803	rnblurview_autolinked_build/CMakeFiles/react_codegen_rnblurview.dir/rnblurview-generated.cpp.o	5b0e54439fc9061
 28478	40450	7983860863926083	rnscreens_autolinked_build/CMakeFiles/react_codegen_rnscreens.dir/b733a28d10bf313f4bb004bbba578eb2/source/codegen/jni/react/renderer/components/rnscreens/EventEmitters.cpp.o	aafbab6426e72206
 24203	32424	7983860784251141	rnscreens_autolinked_build/CMakeFiles/react_codegen_rnscreens.dir/1eb4fc2138252eace71dddc90e291c36/common/cpp/react/renderer/components/rnscreens/RNSTabsHostState.cpp.o	5f52e3444ab5e1cf
-9	7512	7983860535553841	CMakeFiles/appmodules.dir/OnLoad.cpp.o	27d7ec422fd8702
-89	5343	7983860513669803	rnblurview_autolinked_build/CMakeFiles/react_codegen_rnblurview.dir/rnblurview-generated.cpp.o	5b0e54439fc9061
+39	9118	7999063686878183	CMakeFiles/appmodules.dir/OnLoad.cpp.o	88734993edb37fcc
 8046	12745	7983860587970395	rnreanimated_autolinked_build/CMakeFiles/react_codegen_rnreanimated.dir/react/renderer/components/rnreanimated/EventEmitters.cpp.o	5ec3e454bfdac49d
+61	7855	7999063674324907	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/EventEmitters.cpp.o	33058c80e5847567
 67	4295	7983860503261586	rnblurview_autolinked_build/CMakeFiles/react_codegen_rnblurview.dir/react/renderer/components/rnblurview/States.cpp.o	c584d12bc8794d7d
 8517	14954	7983860610072434	rnreanimated_autolinked_build/CMakeFiles/react_codegen_rnreanimated.dir/react/renderer/components/rnreanimated/ComponentDescriptors.cpp.o	d8e5d61ce08139f4
 26217	39769	7983860857673456	rnscreens_autolinked_build/CMakeFiles/react_codegen_rnscreens.dir/ee59952db46e11a097f06b3b7cb07e9c/codegen/jni/react/renderer/components/rnscreens/ComponentDescriptors.cpp.o	b65c1fb97696796a
@@ -32,6 +33,7 @@
 26	10412	7983860564651130	rnasyncstorage_autolinked_build/CMakeFiles/react_codegen_rnasyncstorage.dir/react/renderer/components/rnasyncstorage/Props.cpp.o	2c2fc7575ef0b683
 5788	10828	7983860568681821	rngesturehandler_codegen_autolinked_build/CMakeFiles/react_codegen_rngesturehandler_codegen.dir/rngesturehandler_codegen-generated.cpp.o	aeba15354c59d64
 14331	22966	7983860689695036	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/62c71c30d135a47e14cf77663cfc1a6e/renderer/components/safeareacontext/RNCSafeAreaViewState.cpp.o	a0b0425368705cec
+49	9464	7999063690438609	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/ComponentDescriptors.cpp.o	b4675de5e4dfc4fb
 6673	10875	7983860568846421	RNImagePickerSpec_autolinked_build/CMakeFiles/react_codegen_RNImagePickerSpec.dir/react/renderer/components/RNImagePickerSpec/EventEmitters.cpp.o	ed8cacf86c0bec2f
 6320	11603	7983860576473087	RNImagePickerSpec_autolinked_build/CMakeFiles/react_codegen_RNImagePickerSpec.dir/RNImagePickerSpec-generated.cpp.o	614cc24b6e6fa3b4
 7512	14331	7983860603845100	RNImagePickerSpec_autolinked_build/CMakeFiles/react_codegen_RNImagePickerSpec.dir/react/renderer/components/RNImagePickerSpec/Props.cpp.o	56e9798d85f12f5b
@@ -43,7 +45,7 @@
 8834	15100	7983860611567123	RNImagePickerSpec_autolinked_build/CMakeFiles/react_codegen_RNImagePickerSpec.dir/react/renderer/components/RNImagePickerSpec/ShadowNodes.cpp.o	880563b02099ab01
 22169	30588	7983860765813467	rnscreens_autolinked_build/CMakeFiles/react_codegen_rnscreens.dir/1eb4fc2138252eace71dddc90e291c36/common/cpp/react/renderer/components/rnscreens/RNSScreenState.cpp.o	d8c62574a66779d2
 10415	17111	7983860631644807	rnreanimated_autolinked_build/CMakeFiles/react_codegen_rnreanimated.dir/react/renderer/components/rnreanimated/ShadowNodes.cpp.o	ffa970abfeb01e63
-4	31835	7983860774674476	CMakeFiles/appmodules.dir/D_/FPT/SEP490/OrchidLabMobile/android/app/build/generated/autolinking/src/main/jni/autolinking.cpp.o	a350485035e45b12
+34	21890	7999063813559584	CMakeFiles/appmodules.dir/D_/FPT/SEP490/OrchidLabMobile/android/app/build/generated/autolinking/src/main/jni/autolinking.cpp.o	7a1c4134983a8a40
 14108	18830	7983860648682209	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/d245d8d201f329e66a1d956bc3341e99/jni/react/renderer/components/safeareacontext/EventEmitters.cpp.o	d32780511035e64c
 21027	34254	7983860802562367	rnscreens_autolinked_build/CMakeFiles/react_codegen_rnscreens.dir/1704ff13b9696e5617695b5893118d0b/cpp/react/renderer/components/rnscreens/RNSScreenShadowNodeCommitHook.cpp.o	14d5a4f454b871e9
 11603	18915	7983860649608379	rnreanimated_autolinked_build/CMakeFiles/react_codegen_rnreanimated.dir/react/renderer/components/rnreanimated/Props.cpp.o	8660b8ff506354d9
@@ -54,7 +56,7 @@
 12745	22169	7983860681911488	rnscreens_autolinked_build/CMakeFiles/react_codegen_rnscreens.dir/1704ff13b9696e5617695b5893118d0b/cpp/react/renderer/components/rnscreens/RNSFullWindowOverlayShadowNode.cpp.o	141cbe6fdbdd961c
 24103	34104	7983860801434645	rnscreens_autolinked_build/CMakeFiles/react_codegen_rnscreens.dir/1704ff13b9696e5617695b5893118d0b/cpp/react/renderer/components/rnscreens/RNSSplitViewScreenShadowNode.cpp.o	dbfc25816f890a65
 14257	22447	7983860684822008	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/d245d8d201f329e66a1d956bc3341e99/jni/react/renderer/components/safeareacontext/ShadowNodes.cpp.o	e58005e4e8d353a9
-49125	49342	7983860953763610	D:/FPT/SEP490/OrchidLabMobile/android/app/build/intermediates/cxx/Debug/3x691k4k/obj/arm64-v8a/libappmodules.so	214a0cb5eb673e22
+21891	22647	7999063821849335	D:/FPT/SEP490/OrchidLabMobile/android/app/build/intermediates/cxx/Debug/3x691k4k/obj/arm64-v8a/libappmodules.so	8d04e3f2a81bddc8
 14940	24102	7983860701095796	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/b656c39e811c72cdba8ead39f61dd711/codegen/jni/react/renderer/components/safeareacontext/Props.cpp.o	627f9bcad3d00c8f
 18915	26217	7983860722696198	rnscreens_autolinked_build/CMakeFiles/react_codegen_rnscreens.dir/1704ff13b9696e5617695b5893118d0b/cpp/react/renderer/components/rnscreens/RNSScreenStackHeaderConfigState.cpp.o	85f789be73fb03b3
 12301	24203	7983860702291935	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/ce7602cddb80a24df28e2f5a9c871c83/components/safeareacontext/RNCSafeAreaViewShadowNode.cpp.o	514af59bf86db30f
@@ -78,6 +80,7 @@
 40451	45401	7983860914602136	rnworklets_autolinked_build/CMakeFiles/react_codegen_rnworklets.dir/react/renderer/components/rnworklets/EventEmitters.cpp.o	bed19ca0cad4e2f6
 42151	46497	7983860925501700	RNWorkletsSpec_autolinked_build/CMakeFiles/react_codegen_RNWorkletsSpec.dir/react/renderer/components/RNWorkletsSpec/EventEmitters.cpp.o	e2bd98fef0c85899
 39645	46649	7983860926982845	rnworklets_autolinked_build/CMakeFiles/react_codegen_rnworklets.dir/react/renderer/components/rnworklets/Props.cpp.o	2b91f4510f08efd4
+79	11761	7999063713417334	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/Props.cpp.o	753a9f7cb358ea94
 40649	46794	7983860928493514	rnworklets_autolinked_build/CMakeFiles/react_codegen_rnworklets.dir/react/renderer/components/rnworklets/ShadowNodes.cpp.o	4c423f54eddba751
 35655	47018	7983860930485151	rnsvg_autolinked_build/CMakeFiles/react_codegen_rnsvg.dir/e1c3da021ad440ad2cfd027a15c9cfb4/source/codegen/jni/react/renderer/components/rnsvg/ComponentDescriptors.cpp.o	d29f6ad727e1b6ea
 38587	47051	7983860930894764	rnsvg_autolinked_build/CMakeFiles/react_codegen_rnsvg.dir/52f31ec7cb8f6d0677106d769eb7d302/react-native-svg/common/cpp/react/renderer/components/rnsvg/RNSVGShadowNodes.cpp.o	7d31a9380e8f3310
@@ -87,4 +90,10 @@
 32425	47935	7983860939358978	rnsvg_autolinked_build/CMakeFiles/react_codegen_rnsvg.dir/59a76696076cec57ce1c671263457ed7/build/generated/source/codegen/jni/react/renderer/components/rnsvg/Props.cpp.o	63d6a13b37feeb6e
 43732	48399	7983860944632032	RNWorkletsSpec_autolinked_build/CMakeFiles/react_codegen_RNWorkletsSpec.dir/RNWorkletsSpec-generated.cpp.o	812f9a7a740fa76a
 43847	49125	7983860951874647	RNWorkletsSpec_autolinked_build/CMakeFiles/react_codegen_RNWorkletsSpec.dir/react/renderer/components/RNWorkletsSpec/Props.cpp.o	679e9c5737c0c61f
-1	32	0	D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/arm64-v8a/CMakeFiles/cmake.verify_globs	1c558d4e8a81731a
+73	7651	7999063672097377	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/States.cpp.o	c29c67a150537327
+56	8441	7999063680128009	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/RNVectorIconsSpec-generated.cpp.o	7903af7b22a672af
+67	9305	7999063688865351	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/ShadowNodes.cpp.o	8e150419bd5b8034
+0	23	0	clean	7e0ce9b638ff1399
+23	453	7999101019081307	build.ninja	9cb0d9ff0a48b56d
+1	26	0	D:/FPT/SEP490/OrchidLabMobile/android/app/.cxx/Debug/3x691k4k/arm64-v8a/CMakeFiles/cmake.verify_globs	1c558d4e8a81731a
+0	8	0	clean	7e0ce9b638ff1399

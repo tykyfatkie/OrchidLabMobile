@@ -1,5 +1,11 @@
 import apiClient from '../api/apiClient';
 
+export type NotificationTargetType =
+  | 'Task'
+  | 'ExperimentLog'
+  | 'MonitoringLog'
+  | 'Sample';
+
 export interface NotificationItem {
   id: string;
   userId: string;
@@ -7,6 +13,8 @@ export interface NotificationItem {
   content: string;
   isRead: boolean;
   createdAt: string;
+  notificationTargetType: NotificationTargetType;
+  targetId: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -30,5 +38,5 @@ export const notificationService = {
   markAsRead: async (id: string) => {
     const response = await apiClient.put(`/api/notification/${id}/mark-as-read`);
     return response.data;
-  }
+  },
 };

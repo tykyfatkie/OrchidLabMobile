@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1008827750042",
+    "project_id": "orchidlab-mobile",
+    "storage_bucket": "orchidlab-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1008827750042:android:e82b9b94341992c79b7123",
+        "android_client_info": {
+          "package_name": "com.orchidlabmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAae_vKPc3Iy6GPNZtjwpPbMdYIs4tgF_Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

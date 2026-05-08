@@ -353,14 +353,6 @@ const ReportsScreen = () => {
         />
       )}
 
-      <TouchableOpacity
-        style={styles.floatingCreateButton}
-        activeOpacity={0.88}
-        onPress={() => navigation.navigate('CreateReport')}
-      >
-        <Plus size={22} color="#FFFFFF" />
-      </TouchableOpacity>
-
       <CustomTabBar />
     </SafeAreaView>
   );

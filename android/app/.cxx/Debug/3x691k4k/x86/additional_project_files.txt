@@ -28,6 +28,12 @@ D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\rnreanimated_a
 D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\rnreanimated_autolinked_build\CMakeFiles\react_codegen_rnreanimated.dir\react\renderer\components\rnreanimated\ShadowNodes.cpp.o
 D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\rnreanimated_autolinked_build\CMakeFiles\react_codegen_rnreanimated.dir\react\renderer\components\rnreanimated\States.cpp.o
 D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\rnreanimated_autolinked_build\CMakeFiles\react_codegen_rnreanimated.dir\rnreanimated-generated.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\RNVectorIconsSpec_autolinked_build\CMakeFiles\react_codegen_RNVectorIconsSpec.dir\RNVectorIconsSpec-generated.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\RNVectorIconsSpec_autolinked_build\CMakeFiles\react_codegen_RNVectorIconsSpec.dir\react\renderer\components\RNVectorIconsSpec\ComponentDescriptors.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\RNVectorIconsSpec_autolinked_build\CMakeFiles\react_codegen_RNVectorIconsSpec.dir\react\renderer\components\RNVectorIconsSpec\EventEmitters.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\RNVectorIconsSpec_autolinked_build\CMakeFiles\react_codegen_RNVectorIconsSpec.dir\react\renderer\components\RNVectorIconsSpec\Props.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\RNVectorIconsSpec_autolinked_build\CMakeFiles\react_codegen_RNVectorIconsSpec.dir\react\renderer\components\RNVectorIconsSpec\ShadowNodes.cpp.o
+D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\RNVectorIconsSpec_autolinked_build\CMakeFiles\react_codegen_RNVectorIconsSpec.dir\react\renderer\components\RNVectorIconsSpec\States.cpp.o
 D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\rnworklets_autolinked_build\CMakeFiles\react_codegen_rnworklets.dir\react\renderer\components\rnworklets\ComponentDescriptors.cpp.o
 D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\rnworklets_autolinked_build\CMakeFiles\react_codegen_rnworklets.dir\react\renderer\components\rnworklets\EventEmitters.cpp.o
 D:\FPT\SEP490\OrchidLabMobile\android\app\.cxx\Debug\3x691k4k\x86\rnworklets_autolinked_build\CMakeFiles\react_codegen_rnworklets.dir\react\renderer\components\rnworklets\Props.cpp.o
