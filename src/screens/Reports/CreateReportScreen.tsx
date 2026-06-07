@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -76,10 +77,23 @@ interface StageSelection {
   measuredValueMap: Record<string, string>;
 }
 
+/**
+ * Kết quả phân tích AI đã được chuẩn hóa để dùng trong form.
+ * Bổ sung các trường inactive từ API mới.
+ */
 interface AnalysisResultState {
   analyticResultId: string;
+  /** diseaseId = 0 khi bệnh inactive — vẫn giữ để gửi lên server */
   diseaseId: string;
   diseaseName: string;
+  /** Tên bệnh thô từ model ONNX (khi bệnh inactive) */
+  rawTopDisease?: string;
+  /** false khi bệnh chưa được kích hoạt trong hệ thống */
+  isRawTopDiseaseActive?: boolean;
+  /** Độ tin cậy phân tích (0–1) */
+  confidence: number;
+  /** Kết quả phân tích khỏe mạnh */
+  isHealthy: boolean;
 }
 
 interface ExistingLogState {
@@ -103,7 +117,6 @@ const toText = (value?: string | number | null, fallback = 'N/A') => {
 const parseErrorMessage = async (res: Response, fallback: string) => {
   const raw = await res.text();
   if (!raw) return fallback;
-
   try {
     const json = JSON.parse(raw);
     return json?.detail || json?.message || fallback;
@@ -145,7 +158,6 @@ const normalizeExperimentLogs = (raw: any): OptionItem[] => {
     .map((item: any) => {
       const id = item?.id;
       if (!id) return null;
-
       return {
         id: String(id),
         name: toText(item?.name, `#${id}`),
@@ -289,32 +301,88 @@ const extractMonitoringLogId = (rawText: string, json: any): string => {
   return match?.[0] ?? '';
 };
 
+/**
+ * Chuẩn hóa kết quả từ API phân tích mới.
+ *
+ * API mới trả về:
+ *   {
+ *     stageName, disease: { id, name, isActive, ... },
+ *     analyticResult: { id, predictions, topDisease, confidence },
+ *     rawTopDisease, isRawTopDiseaseActive
+ *   }
+ *
+ * Khi bệnh inactive:
+ *   - disease.id = 0, topDisease = "Unknown", confidence = 0
+ *   - rawTopDisease = "disease_mold_fungus", isRawTopDiseaseActive = false
+ *
+ * Ta vẫn lưu diseaseId = "0" để server nhận — validate riêng trước submit.
+ */
 const extractAnalysisResult = (json: any): AnalysisResultState | null => {
   const source = json?.data ?? json ?? {};
 
+  // analyticResultId: hỗ trợ cả cấu trúc cũ (flat) và mới (object)
   const analyticResultId =
     source?.analyticResultId ??
     source?.analyticResult?.id ??
     source?.analyticResultDto?.id;
 
-  const diseaseId =
+  // diseaseId: có thể = 0 khi bệnh inactive — vẫn chấp nhận
+  const diseaseIdRaw =
     source?.diseaseId ?? source?.disease?.id ?? source?.diseaseDto?.id;
+  const diseaseId =
+    diseaseIdRaw !== null && diseaseIdRaw !== undefined
+      ? String(diseaseIdRaw)
+      : null;
 
-  if (
-    !analyticResultId ||
-    diseaseId === null ||
-    diseaseId === undefined ||
-    diseaseId === ''
-  )
-    return null;
+  // Bắt buộc phải có analyticResultId; diseaseId có thể = "0" (inactive)
+  if (!analyticResultId || diseaseId === null) return null;
+
+  // Confidence: lấy từ analyticResult.confidence, fallback từ predictions
+  let confidence: number = source?.analyticResult?.confidence ?? 0;
+  if (confidence === 0 && source?.rawTopDisease) {
+    const rawNorm = String(source.rawTopDisease)
+      .replace(/_/g, '')
+      .toLowerCase();
+    const predictions: Record<string, number> =
+      source?.analyticResult?.predictions ?? {};
+    const matchKey = Object.keys(predictions).find(k =>
+      k
+        .replace(/\s*\(inactive\)\s*/gi, '')
+        .replace(/_/g, '')
+        .toLowerCase() === rawNorm,
+    );
+    if (matchKey) confidence = predictions[matchKey] ?? 0;
+  }
+
+  // Tên bệnh hiển thị: dùng rawTopDisease nếu inactive
+  const isRawTopDiseaseActive: boolean =
+    source?.isRawTopDiseaseActive ?? true;
+  const rawTopDisease: string | undefined = source?.rawTopDisease;
+  const topDisease = String(
+    source?.analyticResult?.topDisease ?? '',
+  ).toLowerCase();
+  const isHealthy =
+    topDisease === 'healthy' ||
+    (topDisease === 'unknown' &&
+      String(rawTopDisease ?? '').toLowerCase() === 'healthy');
+
+  const diseaseName = !isRawTopDiseaseActive && rawTopDisease
+    ? rawTopDisease.replace(/_/g, ' ')
+    : toText(
+        source?.diseaseName ??
+          source?.disease?.name ??
+          source?.diseaseDto?.name,
+        '',
+      );
 
   return {
     analyticResultId: String(analyticResultId),
-    diseaseId: String(diseaseId),
-    diseaseName: toText(
-      source?.diseaseName ?? source?.disease?.name ?? source?.diseaseDto?.name,
-      '',
-    ),
+    diseaseId,
+    diseaseName,
+    rawTopDisease,
+    isRawTopDiseaseActive,
+    confidence,
+    isHealthy,
   };
 };
 
@@ -354,6 +422,101 @@ const extractSampleDetailState = (raw: any): SampleDetailState => {
     notes: toText(source?.notes, ''),
   };
 };
+
+// ─────────────────────────────────────────────
+// Sub-component: Analysis result card
+// ─────────────────────────────────────────────
+
+const AnalysisResultCard = ({
+  result,
+}: {
+  result: AnalysisResultState;
+}) => {
+  const isInactive = result.isRawTopDiseaseActive === false;
+  const confidencePct = (result.confidence * 100).toFixed(1);
+
+  const bgColor = result.isHealthy
+    ? '#F0FFF4'
+    : isInactive
+    ? '#FFF8E1'
+    : '#FFF0F0';
+  const borderColor = result.isHealthy
+    ? '#C6F6D5'
+    : isInactive
+    ? '#FFD54F'
+    : '#FED7D7';
+  const titleColor = result.isHealthy
+    ? '#2C7A46'
+    : isInactive
+    ? '#B87333'
+    : '#B14C4C';
+
+  return (
+    <View
+      style={[
+        styles.analysisResultCard,
+        { backgroundColor: bgColor, borderColor, borderWidth: 1 },
+      ]}
+    >
+      <Text style={[styles.analysisResultTitle, { color: titleColor }]}>
+        {result.isHealthy
+          ? '✓ Mẫu khỏe mạnh'
+          : isInactive
+          ? '⚠ Phát hiện dấu hiệu bệnh (chưa kích hoạt)'
+          : '✗ Phát hiện bệnh'}
+      </Text>
+
+      <Text style={styles.analysisResultText}>
+        Bệnh:{' '}
+        <Text style={{ fontWeight: '700' }}>
+          {toText(result.diseaseName, result.diseaseId)}
+        </Text>
+        {isInactive ? (
+          <Text style={{ color: '#B87333', fontSize: 11 }}>
+            {' '}(chưa kích hoạt)
+          </Text>
+        ) : null}
+      </Text>
+
+      <Text style={styles.analysisResultText}>
+        Độ tin cậy:{' '}
+        <Text style={{ fontWeight: '700', color: titleColor }}>
+          {confidencePct}%
+        </Text>
+      </Text>
+
+      <Text style={styles.analysisResultText}>
+        Analytic Result ID: {result.analyticResultId}
+      </Text>
+
+      {/* Cảnh báo khi bệnh inactive — không block, nhưng thông báo */}
+      {isInactive ? (
+        <View
+          style={{
+            marginTop: 8,
+            padding: 8,
+            backgroundColor: '#FFF3E0',
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: '#FFB74D',
+          }}
+        >
+          <Text
+            style={{ fontSize: 12, color: '#7A5200', lineHeight: 17, fontWeight: '600' }}
+          >
+            Bệnh này chưa được kích hoạt trong hệ thống. Báo cáo vẫn có thể
+            được lưu và gửi duyệt, nhưng vui lòng liên hệ quản trị viên để xem
+            xét và kích hoạt bệnh này.
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+};
+
+// ─────────────────────────────────────────────
+// Main screen
+// ─────────────────────────────────────────────
 
 const CreateReportScreen = () => {
   const navigation = useNavigation<any>();
@@ -397,6 +560,8 @@ const CreateReportScreen = () => {
 
   const [pickerVisible, setPickerVisible] = useState(false);
 
+  // ── Derived values ──────────────────────────
+
   const selectedSample = useMemo(
     () => samples.find(item => item.id === selectedSampleId) ?? null,
     [samples, selectedSampleId],
@@ -414,6 +579,8 @@ const CreateReportScreen = () => {
     !!createdLogId && (isDraftLike(logStatus) || isRejectedLike(logStatus));
   const canResubmit = isRejectedLike(logStatus) && !!createdLogId;
   const isEditingExisting = !!createdLogId;
+
+  // ── Data fetching ───────────────────────────
 
   const fetchInitialData = useCallback(async () => {
     setError('');
@@ -501,6 +668,9 @@ const CreateReportScreen = () => {
           analyticResultId: state.analyticResultId,
           diseaseId: state.diseaseId,
           diseaseName: '',
+          confidence: 0,
+          isHealthy: false,
+          isRawTopDiseaseActive: true,
         });
       }
     } catch (e: any) {
@@ -542,11 +712,12 @@ const CreateReportScreen = () => {
 
         const stage = pickCurrentStageFromSampleDetail(sampleJson);
         if (!stage) {
-          throw new Error('Không xác định được giai đoạn hiện tại của sample.');
+          throw new Error(
+            'Không xác định được giai đoạn hiện tại của sample.',
+          );
         }
 
         setSampleNotes(sampleState.notes);
-
         setCurrentSampleStageId(stage.sampleStageId);
         setCurrentSampleStageDefinitionId(stage.sampleStageDefinitionId);
         setCurrentSampleStageName(stage.stageName);
@@ -580,7 +751,9 @@ const CreateReportScreen = () => {
         setAnalysisResult(null);
         setSelectedImage(null);
       } catch (e: any) {
-        const message = String(e?.message || 'Không thể tải quy cách giám sát');
+        const message = String(
+          e?.message || 'Không thể tải quy cách giám sát',
+        );
         setStageRequirements([]);
         setSampleNotes('');
         setMeasuredValueMap({});
@@ -613,6 +786,8 @@ const CreateReportScreen = () => {
     if (monitoringLogId) fetchExistingLogDetail();
     if (selectedSampleId) fetchSampleDetailAndRequirements(selectedSampleId);
   };
+
+  // ── Actions ─────────────────────────────────
 
   const onPickImage = () => {
     try {
@@ -669,12 +844,26 @@ const CreateReportScreen = () => {
 
       if (!analysis) {
         throw new Error(
-          'API phân tích không trả đủ analyticResultId hoặc diseaseId.',
+          'API phân tích không trả về analyticResultId hợp lệ.',
         );
       }
 
       setAnalysisResult(analysis);
-      Alert.alert('Thành công', 'Đã phân tích bệnh từ ảnh.');
+
+      // Hiển thị thông báo phù hợp theo trạng thái bệnh
+      if (analysis.isHealthy) {
+        Alert.alert('Kết quả phân tích', 'Mẫu khỏe mạnh, không phát hiện bệnh.');
+      } else if (analysis.isRawTopDiseaseActive === false) {
+        Alert.alert(
+          'Phát hiện dấu hiệu bệnh',
+          `Bệnh "${analysis.diseaseName}" được phát hiện nhưng chưa được kích hoạt trong hệ thống. Vui lòng liên hệ quản trị viên.`,
+        );
+      } else {
+        Alert.alert(
+          'Phát hiện bệnh',
+          `Đã phát hiện: ${analysis.diseaseName} (${(analysis.confidence * 100).toFixed(1)}% tin cậy).`,
+        );
+      }
     } catch (e: any) {
       const message = String(e?.message || 'Không thể phân tích bệnh');
       Alert.alert('Lỗi phân tích', message);
@@ -706,10 +895,20 @@ const CreateReportScreen = () => {
       return false;
     }
 
-    if (!analysisResult?.analyticResultId || !analysisResult?.diseaseId) {
+    if (!analysisResult?.analyticResultId) {
       Alert.alert(
         'Thiếu dữ liệu',
         'Vui lòng phân tích bệnh trước khi tạo báo cáo.',
+      );
+      return false;
+    }
+
+    // Cho phép diseaseId = "0" (bệnh inactive) — server sẽ xử lý
+    // Chỉ block nếu diseaseId hoàn toàn rỗng
+    if (!analysisResult?.diseaseId && analysisResult?.diseaseId !== '0') {
+      Alert.alert(
+        'Thiếu dữ liệu',
+        'Không xác định được mã bệnh từ kết quả phân tích.',
       );
       return false;
     }
@@ -926,6 +1125,8 @@ const CreateReportScreen = () => {
     await createLog(true);
   };
 
+  // ── Error fallback ───────────────────────────
+
   const renderErrorFallback = () => (
     <View style={styles.center}>
       <View style={styles.errorCard}>
@@ -956,6 +1157,8 @@ const CreateReportScreen = () => {
   );
 
   const isActionLoading = saving || submitting || analyzing || detailLoading;
+
+  // ── Render ───────────────────────────────────
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -1002,6 +1205,7 @@ const CreateReportScreen = () => {
           }
           showsVerticalScrollIndicator={false}
         >
+          {/* ── Section 1: Form nhập liệu ── */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Form nhập liệu</Text>
             <View style={styles.card}>
@@ -1036,6 +1240,7 @@ const CreateReportScreen = () => {
                   placeholderTextColor="#6F857A"
                 />
               </View>
+
               <View style={styles.inputWrap}>
                 <Text style={styles.label}>Ghi chú báo cáo</Text>
                 <TextInput
@@ -1047,6 +1252,7 @@ const CreateReportScreen = () => {
                   multiline
                 />
               </View>
+
               <View style={styles.inputWrap}>
                 <Text style={styles.label}>
                   Sample <Text style={styles.requiredStar}>*</Text>
@@ -1101,6 +1307,7 @@ const CreateReportScreen = () => {
             </View>
           </View>
 
+          {/* ── Section 2: Phân tích bệnh ── */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Phân tích bệnh</Text>
             <View style={styles.card}>
@@ -1151,27 +1358,17 @@ const CreateReportScreen = () => {
               ) : null}
 
               {analysisResult ? (
-                <View style={styles.analysisResultCard}>
-                  <Text style={styles.analysisResultTitle}>Kết quả AI</Text>
-                  <Text style={styles.analysisResultText}>
-                    Disease:{' '}
-                    {toText(
-                      analysisResult.diseaseName,
-                      analysisResult.diseaseId,
-                    )}
-                  </Text>
-                  <Text style={styles.analysisResultText}>
-                    Analytic Result ID: {analysisResult.analyticResultId}
-                  </Text>
-                </View>
+                <AnalysisResultCard result={analysisResult} />
               ) : (
                 <Text style={styles.helperText}>
-                  Cần phân tích ảnh để lấy mã bệnh và mã kết quả phân tích trước khi tạo báo cáo.
+                  Cần phân tích ảnh để lấy mã bệnh và mã kết quả phân tích
+                  trước khi tạo báo cáo.
                 </Text>
               )}
             </View>
           </View>
 
+          {/* ── Section 3: Chi tiết nhật ký ── */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Chi tiết nhật ký</Text>
             <View style={styles.card}>
@@ -1202,7 +1399,8 @@ const CreateReportScreen = () => {
 
                     <View style={styles.requirementInputWrap}>
                       <Text style={styles.label}>
-                        Giá trị đo <Text style={styles.requiredStar}>*</Text>
+                        Giá trị đo{' '}
+                        <Text style={styles.requiredStar}>*</Text>
                       </Text>
                       <TextInput
                         style={styles.input}
@@ -1221,6 +1419,7 @@ const CreateReportScreen = () => {
             </View>
           </View>
 
+          {/* ── Section 4: Hành động ── */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Hành động</Text>
             <View style={styles.card}>
@@ -1271,8 +1470,8 @@ const CreateReportScreen = () => {
 
               {isEditingExisting ? (
                 <Text style={styles.helperText}>
-                  Bạn đang sửa báo cáo đã tồn tại. Lưu nháp sẽ tạo bản nháp mới;
-                  Gửi duyệt/Gửi lại sẽ gửi báo cáo hiện tại.
+                  Bạn đang sửa báo cáo đã tồn tại. Lưu nháp sẽ tạo bản nháp
+                  mới; Gửi duyệt/Gửi lại sẽ gửi báo cáo hiện tại.
                 </Text>
               ) : null}
             </View>
@@ -1280,6 +1479,7 @@ const CreateReportScreen = () => {
         </ScrollView>
       )}
 
+      {/* ── Modal: chọn sample ── */}
       <Modal
         visible={pickerVisible}
         transparent
@@ -1304,7 +1504,6 @@ const CreateReportScreen = () => {
               keyExtractor={item => item.id}
               renderItem={({ item }) => {
                 const isActive = item.id === selectedSampleId;
-
                 return (
                   <TouchableOpacity
                     style={[

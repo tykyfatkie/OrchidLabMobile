@@ -99,14 +99,29 @@ interface DiseaseIncidentItem {
   reviewNote: string;
 }
 
+// Updated AnalysisResponse to include new fields from API
 interface AnalysisResponse {
   stageName: string;
   disease: {
+    id?: number;
     name: string;
     code: string;
     description: string;
+    onnxClassName?: string;
+    isActive?: boolean;
+    createdAt?: string;
   };
-  analyticResult: Record<string, number>;
+  analyticResult: {
+    id?: string;
+    predictions: Record<string, number>;
+    topDisease: string;
+    confidence: number;
+    analyzedAt?: string;
+  };
+  // New fields: present when top disease is inactive in the system
+  rawTopDisease?: string;
+  selectedDisease?: string;
+  isRawTopDiseaseActive?: boolean;
 }
 
 interface StageProgressRow {
@@ -281,7 +296,24 @@ const getIncidentStatusStyle = (status?: string) => {
 const canReviewIncident = (status?: string) =>
   status === 'AIDetected' || status === 'UnderReview';
 
+/**
+ * Kiểm tra kết quả khỏe mạnh, hỗ trợ cả trường hợp bệnh inactive.
+ * - Nếu topDisease === "healthy" → khỏe
+ * - Nếu topDisease === "unknown" và rawTopDisease === "healthy" → khỏe
+ * - Nếu isRawTopDiseaseActive === false → KHÔNG coi là healthy (có dấu hiệu bệnh)
+ * - Fallback: so sánh giá trị healthy vs non-healthy trong predictions
+ */
 const computeIsHealthy = (result: AnalysisResponse): boolean => {
+  const topDisease = (result.analyticResult?.topDisease ?? '').toLowerCase();
+  const rawTop = (result.rawTopDisease ?? '').toLowerCase();
+
+  if (topDisease === 'healthy') return true;
+  if (topDisease === 'unknown' && rawTop === 'healthy') return true;
+
+  // Nếu có rawTopDisease và nó không active — có dấu hiệu bệnh, không khỏe
+  if (result.isRawTopDiseaseActive === false && rawTop && rawTop !== 'healthy') return false;
+
+  // Fallback: kiểm tra disease.code / name
   const diseaseCode = (result.disease?.code ?? '').toLowerCase();
   const diseaseName = (result.disease?.name ?? '').toLowerCase();
   if (
@@ -291,12 +323,47 @@ const computeIsHealthy = (result: AnalysisResponse): boolean => {
   ) {
     return true;
   }
-  const analyticResult = result.analyticResult ?? {};
-  const nonHealthyValues = Object.entries(analyticResult)
-    .filter(([key]) => key !== 'healthy')
+
+  // Fallback cuối: so sánh predictions
+  const predictions = result.analyticResult?.predictions ?? {};
+  const nonHealthyValues = Object.entries(predictions)
+    .filter(([key]) => !key.toLowerCase().includes('healthy'))
     .map(([, value]) => value as number);
   const maxNonHealthy = nonHealthyValues.length > 0 ? Math.max(...nonHealthyValues) : 0;
-  return (analyticResult.healthy ?? 0) >= maxNonHealthy;
+  const healthyVal = Object.entries(predictions).find(([k]) =>
+    k.toLowerCase().includes('healthy'),
+  )?.[1] ?? 0;
+  return healthyVal >= maxNonHealthy;
+};
+
+/**
+ * Kiểm tra trường hợp bệnh inactive: topDisease = "unknown" do bệnh chưa được kích hoạt.
+ */
+const computeIsInactiveDisease = (result: AnalysisResponse): boolean => {
+  return (
+    result.isRawTopDiseaseActive === false &&
+    (result.analyticResult?.topDisease ?? '').toLowerCase() === 'unknown'
+  );
+};
+
+/**
+ * Tính confidence hiển thị: nếu confidence = 0 (do bệnh inactive),
+ * tra cứu giá trị từ predictions theo rawTopDisease.
+ */
+const computeDisplayConfidence = (result: AnalysisResponse): number => {
+  if (result.analyticResult?.confidence > 0) return result.analyticResult.confidence;
+  if (!result.rawTopDisease) return 0;
+
+  const rawNormalized = result.rawTopDisease.replace(/_/g, '').toLowerCase();
+  const predictions = result.analyticResult?.predictions ?? {};
+  const matchedKey = Object.keys(predictions).find(
+    (k) =>
+      k
+        .replace(/\s*\(inactive\)\s*/gi, '')
+        .replace(/_/g, '')
+        .toLowerCase() === rawNormalized,
+  );
+  return matchedKey ? predictions[matchedKey] ?? 0 : 0;
 };
 
 const STAGE_NAME_MAP: Record<string, string> = {
@@ -304,21 +371,6 @@ const STAGE_NAME_MAP: Record<string, string> = {
   tissue: 'Mầm',
   tree: 'Cây hoàn chỉnh',
 };
-
-const ANALYTIC_LABELS: { key: string; label: string }[] = [
-  { key: 'healthy', label: 'Khỏe mạnh' },
-  { key: 'anthracnose', label: 'Thán thư' },
-  { key: 'bacterialWilt', label: 'Héo vi khuẩn' },
-  { key: 'blackrot', label: 'Thối đen' },
-  { key: 'brownspots', label: 'Đốm nâu' },
-  { key: 'moldBacterial', label: 'Mốc vi khuẩn' },
-  { key: 'moldFungus', label: 'Mốc nấm' },
-  { key: 'softRot', label: 'Thối mềm' },
-  { key: 'stemRot', label: 'Thối thân' },
-  { key: 'witheredYellowRoot', label: 'Héo vàng rễ' },
-  { key: 'oxidation', label: 'Oxy hóa' },
-  { key: 'virus', label: 'Virus' },
-];
 
 // ─────────────────────────────────────────────
 // Reusable sub-components
@@ -585,17 +637,44 @@ const AnalysisModal = ({
   visible,
   analysisResult,
   isHealthy,
+  isInactiveDisease,
+  displayConfidence,
   onClose,
 }: {
   visible: boolean;
   analysisResult: AnalysisResponse | null;
   isHealthy: boolean;
+  isInactiveDisease: boolean;
+  displayConfidence: number;
   onClose: () => void;
 }) => {
   if (!analysisResult) return null;
 
   const stageName =
-    STAGE_NAME_MAP[analysisResult.stageName] ?? analysisResult.stageName ?? 'N/A';
+    STAGE_NAME_MAP[(analysisResult.stageName ?? '').toLowerCase()] ??
+    analysisResult.stageName ??
+    'N/A';
+
+  // Tên bệnh hiển thị: nếu inactive thì dùng rawTopDisease thay vì "Unknown"
+  const displayDiseaseName = isInactiveDisease && analysisResult.rawTopDisease
+    ? analysisResult.rawTopDisease.replace(/_/g, ' ')
+    : analysisResult.disease?.name ?? 'N/A';
+
+  const confidencePct = (displayConfidence * 100).toFixed(1);
+
+  // Màu theme theo trạng thái
+  const themeColor = isHealthy ? '#2C7A46' : isInactiveDisease ? '#B87333' : '#B14C4C';
+  const themeBgColor = isHealthy ? '#A3F7BF' : isInactiveDisease ? '#FFF3E0' : '#FFEAEA';
+
+  // Predictions: sắp xếp theo xác suất giảm dần, bỏ hậu tố "(inactive)" khi hiển thị
+  const sortedPredictions = Object.entries(analysisResult.analyticResult?.predictions ?? {}).sort(
+    ([, a], [, b]) => b - a,
+  );
+
+  // rawTopDisease normalized để so khớp top
+  const rawNormalized = (analysisResult.rawTopDisease ?? '')
+    .replace(/_/g, '')
+    .toLowerCase();
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -613,6 +692,7 @@ const AnalysisModal = ({
             contentContainerStyle={modalStyles.sheetBody}
             showsVerticalScrollIndicator={false}
           >
+            {/* Summary row: stage + disease name */}
             <View style={modalStyles.summaryRow}>
               <View style={modalStyles.summaryCell}>
                 <Text style={modalStyles.summaryLabel}>Giai đoạn</Text>
@@ -620,9 +700,43 @@ const AnalysisModal = ({
               </View>
               <View style={[modalStyles.summaryCell, { borderLeftWidth: 1, borderLeftColor: '#E6ECE6' }]}>
                 <Text style={modalStyles.summaryLabel}>Tên bệnh</Text>
-                <Text style={[modalStyles.summaryValue, { color: isHealthy ? '#2C7A46' : '#B14C4C' }]}>
-                  {analysisResult.disease?.name ?? 'N/A'}
+                <Text style={[modalStyles.summaryValue, { color: themeColor }]}>
+                  {displayDiseaseName}
                 </Text>
+                {/* Badge inactive */}
+                {isInactiveDisease && (
+                  <View style={modalStyles.inactiveBadge}>
+                    <Text style={modalStyles.inactiveBadgeText}>Chưa kích hoạt</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Confidence ring row */}
+            <View style={modalStyles.confidenceRow}>
+              <View style={[modalStyles.confidenceCircle, { borderColor: themeColor + '55' }]}>
+                <Text style={[modalStyles.confidencePct, { color: themeColor }]}>
+                  {confidencePct}%
+                </Text>
+                <Text style={modalStyles.confidenceLabel}>độ tin cậy</Text>
+              </View>
+              <View style={{ flex: 1, justifyContent: 'center' as const, gap: 4 }}>
+                {/* Health badge */}
+                <View style={[modalStyles.healthBadge, { backgroundColor: themeBgColor }]}>
+                  <Text style={[modalStyles.healthBadgeText, { color: themeColor }]}>
+                    {isHealthy
+                      ? '✓ Mẫu khỏe mạnh'
+                      : isInactiveDisease
+                      ? '⚠ Phát hiện dấu hiệu bệnh'
+                      : '✗ Phát hiện dấu hiệu bệnh'}
+                  </Text>
+                </View>
+                {/* Inactive notice */}
+                {isInactiveDisease && (
+                  <Text style={modalStyles.inactiveNotice}>
+                    Bệnh này chưa được kích hoạt trong hệ thống. Liên hệ quản trị viên để xem xét.
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -633,34 +747,53 @@ const AnalysisModal = ({
               </View>
             )}
 
-            <View
-              style={[
-                modalStyles.healthBadge,
-                isHealthy ? modalStyles.healthBadgeGreen : modalStyles.healthBadgeRed,
-              ]}
-            >
-              <Text style={modalStyles.healthBadgeText}>
-                {isHealthy ? '✓ Mẫu khỏe mạnh' : '✗ Phát hiện dấu hiệu bệnh'}
-              </Text>
-            </View>
-
-            <Text style={modalStyles.subTitle}>Kết quả phân tích chi tiết</Text>
+            {/* Predictions breakdown */}
+            <Text style={modalStyles.subTitle}>Phân bố xác suất bệnh</Text>
             <View style={modalStyles.analyticGrid}>
-              {ANALYTIC_LABELS.map(({ key, label }) => {
-                const raw = analysisResult.analyticResult?.[key] ?? 0;
-                const pct = raw <= 1 ? raw * 100 : raw;
-                const isHighlight = key !== 'healthy' && pct >= 50;
+              {sortedPredictions.map(([onnxKey, prob]) => {
+                const baseKey = onnxKey.replace(/\s*\(inactive\)\s*/gi, '').trim();
+                const isInactiveKey = /\(inactive\)/i.test(onnxKey);
+
+                // Xác định đây có phải top prediction không
+                const keyNormalized = baseKey.replace(/_/g, '').toLowerCase();
+                const isTop =
+                  onnxKey === analysisResult.analyticResult?.topDisease ||
+                  keyNormalized === rawNormalized;
+
+                const pct = prob <= 1 ? prob * 100 : prob;
+
+                // Màu bar
+                const barColor = isTop
+                  ? themeColor
+                  : baseKey.toLowerCase().includes('healthy')
+                  ? '#2C7A46'
+                  : '#B0C4B4';
+
                 return (
-                  <View key={key} style={modalStyles.analyticItem}>
-                    <Text style={modalStyles.analyticLabel}>{label}</Text>
+                  <View key={onnxKey} style={modalStyles.analyticItem}>
+                    <View style={{ flexDirection: 'row' as const, alignItems: 'center' as const, marginBottom: 2, gap: 6 }}>
+                      <Text
+                        style={[
+                          modalStyles.analyticLabel,
+                          isTop && { color: themeColor, fontWeight: '900' as const },
+                        ]}
+                      >
+                        {baseKey}
+                      </Text>
+                      {isInactiveKey && (
+                        <View style={modalStyles.inactivePill}>
+                          <Text style={modalStyles.inactivePillText}>inactive</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text
                       style={[
                         modalStyles.analyticPct,
-                        isHighlight && { color: '#B14C4C', fontWeight: '900' },
-                        key === 'healthy' && { color: '#2C7A46' },
+                        isTop && { color: themeColor, fontWeight: '900' as const },
+                        baseKey.toLowerCase().includes('healthy') && { color: '#2C7A46' },
                       ]}
                     >
-                      {pct.toFixed(1)}%
+                      {pct.toFixed(1) === '0.0' ? '~0.0' : pct.toFixed(1)}%
                     </Text>
                     <View style={modalStyles.barTrack}>
                       <View
@@ -668,12 +801,7 @@ const AnalysisModal = ({
                           modalStyles.barFill,
                           {
                             width: `${Math.min(pct, 100)}%` as any,
-                            backgroundColor:
-                              key === 'healthy'
-                                ? '#2C7A46'
-                                : isHighlight
-                                ? '#B14C4C'
-                                : '#B0C4B4',
+                            backgroundColor: barColor,
                           },
                         ]}
                       />
@@ -682,6 +810,23 @@ const AnalysisModal = ({
                 );
               })}
             </View>
+
+            {/* Inactive disease warning — không cho tiêu hủy */}
+            {isInactiveDisease && (
+              <View style={modalStyles.inactiveWarningBox}>
+                <Text style={modalStyles.inactiveWarningTitle}>
+                  ⚠ Bệnh chưa được kích hoạt
+                </Text>
+                <Text style={modalStyles.inactiveWarningText}>
+                  Bệnh{' '}
+                  <Text style={{ fontWeight: '800' as const }}>
+                    {analysisResult.rawTopDisease?.replace(/_/g, ' ')}
+                  </Text>{' '}
+                  hiện chưa được kích hoạt trong hệ thống. Vui lòng liên hệ quản trị viên để xem
+                  xét và kích hoạt trước khi tiến hành tiêu hủy mẫu.
+                </Text>
+              </View>
+            )}
           </ScrollView>
 
           <View style={modalStyles.sheetFooter}>
@@ -895,6 +1040,50 @@ const modalStyles = {
     letterSpacing: 0.5,
   },
   summaryValue: { fontSize: 14, fontWeight: '800' as const, color: '#1F3D2F' },
+  // Inactive badge under disease name
+  inactiveBadge: {
+    marginTop: 4,
+    alignSelf: 'flex-start' as const,
+    backgroundColor: '#FFF3E0',
+    borderWidth: 1,
+    borderColor: '#FFB74D',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  inactiveBadgeText: { fontSize: 10, fontWeight: '700' as const, color: '#B87333' },
+  // Confidence row (circle + badge side by side)
+  confidenceRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 14,
+    marginBottom: 12,
+  },
+  confidenceCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    backgroundColor: '#FAFFFE',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
+  confidencePct: { fontSize: 16, fontWeight: '900' as const },
+  confidenceLabel: { fontSize: 9, color: '#7A9A84', marginTop: 1 },
+  healthBadge: {
+    alignSelf: 'flex-start' as const,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  healthBadgeText: { fontSize: 13, fontWeight: '800' as const },
+  // Inactive notice text
+  inactiveNotice: {
+    fontSize: 11,
+    color: '#B87333',
+    fontWeight: '600' as const,
+    lineHeight: 15,
+  },
   descBox: {
     borderRadius: 12,
     backgroundColor: '#F2F6F2',
@@ -910,16 +1099,6 @@ const modalStyles = {
     letterSpacing: 0.5,
   },
   descText: { fontSize: 13, lineHeight: 19, color: '#1F3D2F', fontWeight: '600' as const },
-  healthBadge: {
-    alignSelf: 'flex-start' as const,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    marginBottom: 16,
-  },
-  healthBadgeGreen: { backgroundColor: '#A3F7BF' },
-  healthBadgeRed: { backgroundColor: '#FFEAEA' },
-  healthBadgeText: { fontSize: 13, fontWeight: '800' as const, color: '#1F3D2F' },
   subTitle: { fontSize: 14, fontWeight: '800' as const, color: '#1F3D2F', marginBottom: 10 },
   analyticGrid: { gap: 6, marginBottom: 16 },
   analyticItem: {
@@ -928,10 +1107,42 @@ const modalStyles = {
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  analyticLabel: { fontSize: 12, color: '#4F6658', fontWeight: '700' as const, marginBottom: 2 },
+  analyticLabel: { fontSize: 12, color: '#4F6658', fontWeight: '700' as const },
   analyticPct: { fontSize: 13, fontWeight: '700' as const, color: '#1F3D2F', marginBottom: 4 },
   barTrack: { height: 4, backgroundColor: '#E8EFE8', borderRadius: 2, overflow: 'hidden' as const },
   barFill: { height: 4, borderRadius: 2 },
+  // Inactive pill inside prediction row
+  inactivePill: {
+    backgroundColor: '#FFF3E0',
+    borderWidth: 1,
+    borderColor: '#FFB74D',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  inactivePillText: { fontSize: 9, fontWeight: '700' as const, color: '#B87333' },
+  // Inactive warning box at bottom of modal
+  inactiveWarningBox: {
+    backgroundColor: '#FFF8E1',
+    borderWidth: 1,
+    borderColor: '#FFB74D',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
+    gap: 6,
+  },
+  inactiveWarningTitle: {
+    fontSize: 13,
+    fontWeight: '800' as const,
+    color: '#B87333',
+    marginBottom: 4,
+  },
+  inactiveWarningText: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: '#7A5200',
+    fontWeight: '600' as const,
+  },
 };
 
 const reviewModalStyles = {
@@ -1003,6 +1214,16 @@ const SampleDetailScreen = () => {
   const isHealthy = useMemo(() => {
     if (!analysisResult) return true;
     return computeIsHealthy(analysisResult);
+  }, [analysisResult]);
+
+  const isInactiveDisease = useMemo(() => {
+    if (!analysisResult) return false;
+    return computeIsInactiveDisease(analysisResult);
+  }, [analysisResult]);
+
+  const displayConfidence = useMemo(() => {
+    if (!analysisResult) return 0;
+    return computeDisplayConfidence(analysisResult);
   }, [analysisResult]);
 
   const stageProgressRows = useMemo<StageProgressRow[]>(() => {
@@ -1215,21 +1436,37 @@ const SampleDetailScreen = () => {
       const json = parseJsonSafely(raw);
       const source = json?.data ?? json ?? {};
 
+      // Normalize AnalysisResponse, bao gồm cả các trường mới (rawTopDisease, isRawTopDiseaseActive)
       const normalized: AnalysisResponse = {
         stageName: toText(source?.stageName, ''),
         disease: {
+          id: source?.disease?.id,
           name: toText(source?.disease?.name ?? source?.diseaseName, 'Không xác định'),
           code: toText(source?.disease?.code ?? source?.diseaseCode, ''),
           description: toText(source?.disease?.description, ''),
+          onnxClassName: source?.disease?.onnxClassName,
+          isActive: source?.disease?.isActive,
+          createdAt: source?.disease?.createdAt,
         },
-        analyticResult: source?.analyticResult ?? {},
+        analyticResult: {
+          id: source?.analyticResult?.id,
+          predictions: source?.analyticResult?.predictions ?? {},
+          topDisease: toText(source?.analyticResult?.topDisease, ''),
+          confidence: source?.analyticResult?.confidence ?? 0,
+          analyzedAt: source?.analyticResult?.analyzedAt,
+        },
+        rawTopDisease: source?.rawTopDisease,
+        selectedDisease: source?.selectedDisease,
+        isRawTopDiseaseActive: source?.isRawTopDiseaseActive,
       };
 
       setAnalysisResult(normalized);
       setShowAnalysisModal(true);
 
+      // Chỉ reload incidents nếu phát hiện bệnh active thực sự
       const healthy = computeIsHealthy(normalized);
-      if (!healthy && sample?.experimentLogId) {
+      const inactiveDisease = computeIsInactiveDisease(normalized);
+      if (!healthy && !inactiveDisease && sample?.experimentLogId) {
         await fetchIncidents(sample.experimentLogId);
       }
     } catch (e: any) {
@@ -1407,6 +1644,8 @@ const SampleDetailScreen = () => {
         visible={showAnalysisModal}
         analysisResult={analysisResult}
         isHealthy={isHealthy}
+        isInactiveDisease={isInactiveDisease}
+        displayConfidence={displayConfidence}
         onClose={() => setShowAnalysisModal(false)}
       />
 
